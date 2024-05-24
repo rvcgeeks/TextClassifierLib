@@ -13,6 +13,12 @@
 
 using namespace std;
 
+struct SparseNode {
+  int row;
+  int col;
+  int data;
+};
+
 struct Sentence
 {
   vector<int> sentence_array;
@@ -82,8 +88,10 @@ public:
   void setCaseSensitive(bool bool_) { case_sensitive = bool_; }
   void setIncludeStopWords(bool bool_) { include_stopwords = bool_; } // FIX ME!!!!!!!!
 
-  friend class BaseClassifier;
-  friend class SimpleClassifier;
+  // Functions to load and save model
+  void save(std::ofstream& outFile) const;
+  void load(std::ifstream& inFile);
+
   friend class NaiveBayesClassifier;
 
 private:
