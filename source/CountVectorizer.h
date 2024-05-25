@@ -88,14 +88,18 @@ public:
   void setCaseSensitive(bool bool_) { case_sensitive = bool_; }
   void setIncludeStopWords(bool bool_) { include_stopwords = bool_; } // FIX ME!!!!!!!!
 
+  int totalWords();
+  int totalWordsOfType(bool label_);
+  int countOccurances(string word);
+  int countOccurancesOfType(string word, bool label_);
+
   // Functions to load and save model
   void save(std::ofstream& outFile) const;
   void load(std::ifstream& inFile);
 
   friend class NaiveBayesClassifier;
 
-private:
-  vector<string> word_array;  // Make protected (all)
+  vector<string> word_array;
   vector<shared_ptr<Sentence>> sentences;
   bool binary;
   bool case_sensitive;

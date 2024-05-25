@@ -1,3 +1,6 @@
+#ifndef GLOBALDATA_H__
+#define GLOBALDATA_H__
+
 #include <string>
 #include <vector>
 
@@ -33,3 +36,5 @@ public:
 
    }
 };
+
+#endif // GLOBALDATA_H__

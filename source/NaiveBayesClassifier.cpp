@@ -1,3 +1,4 @@
+
 #include "NaiveBayesClassifier.h"
 
 NaiveBayesClassifier::NaiveBayesClassifier()
@@ -11,94 +12,6 @@ NaiveBayesClassifier::~NaiveBayesClassifier()
 {
 }
 
-void NaiveBayesClassifier::shape()
-{
-    CV.shape();
-}
-void NaiveBayesClassifier::head()
-{
-    CV.head();
-}
-
-int NaiveBayesClassifier::totalWords()
-{
-    int ret = 0;
-    for (auto sentence : CV.sentences)
-    {
-        for (auto count_ : sentence->sentence_array)
-        {
-            ret += count_;
-        }
-    }
-    return ret;
-}
-
-int NaiveBayesClassifier::totalWordsOfType(bool label_)
-{
-    int ret = 0;
-    for (auto sentence : CV.sentences)
-    {
-        for (auto count_ : sentence->sentence_array)
-        {
-            if (sentence->label == label_)
-            {
-                ret += count_;
-            }
-        }
-    }
-    return ret;
-}
-
-float NaiveBayesClassifier::pOfType(bool label_)
-{
-    int ttl = totalWords();
-    int ttlOfType = totalWordsOfType(label_);
-    return (float)ttlOfType / (float)ttl;
-}
-
-int NaiveBayesClassifier::countOccurances(string word)
-{
-    int ret = 0;
-    unsigned int word_array_size = CV.getWordArraySize();
-    for (unsigned int i = 0; i < word_array_size; i++)
-    {
-        if (CV.word_array[i] == word)
-        {
-            for (auto sentence : CV.sentences)
-            {
-                if (sentence->sentence_array.size() > i)
-                {
-                    ret += sentence->sentence_array[i];
-                }
-            }
-        }
-    }
-    return ret;
-}
-
-int NaiveBayesClassifier::countOccurancesOfType(string word, bool label_)
-{
-    int ret = 0;
-    unsigned int word_array_size = CV.getWordArraySize();
-    for (unsigned int i = 0; i < word_array_size; i++)
-    {
-        if (CV.word_array[i] == word)
-        {
-            for (auto sentence : CV.sentences)
-            {
-                if (sentence->sentence_array.size() > i)
-                {
-                    if (sentence->label == label_)
-                    {
-                        ret += sentence->sentence_array[i];
-                    }
-                }
-            }
-        }
-    }
-    return ret;
-}
-
 void NaiveBayesClassifier::fit(string abs_filepath_to_features, string abs_filepath_to_labels)
 {
     CV.fit(abs_filepath_to_features, abs_filepath_to_labels);
@@ -108,11 +21,13 @@ void NaiveBayesClassifier::fit(string abs_filepath_to_features, string abs_filep
 
 	cout << "fitting NaiveBayesClassifier..." << endl;
 
-    total_words_of_type_true = totalWordsOfType(true);
-    logp_true = log(pOfType(true));
+	int total_words = CV.totalWords();
 
-    total_words_of_type_false = totalWordsOfType(false);
-    logp_false = log(pOfType(false));
+    total_words_of_type_true = CV.totalWordsOfType(true);
+    logp_true = log((float)total_words_of_type_true / (float)total_words);
+
+    total_words_of_type_false = CV.totalWordsOfType(false);
+    logp_false = log((float)total_words_of_type_false / (float)total_words);
 
 	cout << "total_words_of_type_true = " << total_words_of_type_true << endl
 		 << "logp_true = " << logp_true << endl
@@ -122,39 +37,30 @@ void NaiveBayesClassifier::fit(string abs_filepath_to_features, string abs_filep
 		 << "smoothing_param_p = " << smoothing_param_p << endl;
 }
 
-float NaiveBayesClassifier::getWeight(vector<string> sentence, bool label_)
-{
-    float ret;
-    int total_words_of_type;
-    float mp = smoothing_param_m * smoothing_param_p;
-    float m = smoothing_param_m;
-
-    if (label_ == true)
-    {
-        total_words_of_type = total_words_of_type_true;
-        ret = logp_true;
-    }
-    else
-    {
-        total_words_of_type = total_words_of_type_false;
-        ret = logp_false;
-    }
-
-    for (auto word : sentence)
-    {
-        ret += log(((float)countOccurancesOfType(word, label_) + mp) / ((float)total_words_of_type + m));
-    }
-    return ret;
-}
-
 int NaiveBayesClassifier::predict(string sentence)
 {
     GlobalData vars;
     vector<string> processed_input;
-    processed_input = CV.buildSentenceVector(sentence); // Encapsulate better
-    float trueWeight = getWeight(processed_input, true);
-    float falseWeight = getWeight(processed_input, false);
-    if (trueWeight < falseWeight)
+
+    processed_input = CV.buildSentenceVector(sentence);
+
+    float trueWeight, falseWeight;
+    float mp = smoothing_param_m * smoothing_param_p;
+    float m = smoothing_param_m;
+
+	trueWeight = logp_true;
+	for (auto word : processed_input)
+    {
+        trueWeight += log(((float)CV.countOccurancesOfType(word, true) + mp) / ((float)total_words_of_type_true + m));
+    }
+
+	falseWeight = logp_false;
+	for (auto word : processed_input)
+    {
+        falseWeight += log(((float)CV.countOccurancesOfType(word, false) + mp) / ((float)total_words_of_type_false + m));
+    }
+	
+	if (trueWeight < falseWeight)
     {
         return vars.NEG;
     }

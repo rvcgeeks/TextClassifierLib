@@ -237,6 +237,79 @@ vector<string> CountVectorizer::buildSentenceVector(string sentence_)
     return ret;
 }
 
+int CountVectorizer::totalWords()
+{
+    int ret = 0;
+    for (auto sentence : sentences)
+    {
+        for (auto count_ : sentence->sentence_array)
+        {
+            ret += count_;
+        }
+    }
+    return ret;
+}
+
+int CountVectorizer::totalWordsOfType(bool label_)
+{
+    int ret = 0;
+    for (auto sentence : sentences)
+    {
+        for (auto count_ : sentence->sentence_array)
+        {
+            if (sentence->label == label_)
+            {
+                ret += count_;
+            }
+        }
+    }
+    return ret;
+}
+
+
+int CountVectorizer::countOccurances(string word)
+{
+    int ret = 0;
+    unsigned int word_array_size = getWordArraySize();
+    for (unsigned int i = 0; i < word_array_size; i++)
+    {
+        if (word_array[i] == word)
+        {
+            for (auto sentence : sentences)
+            {
+                if (sentence->sentence_array.size() > i)
+                {
+                    ret += sentence->sentence_array[i];
+                }
+            }
+        }
+    }
+    return ret;
+}
+
+int CountVectorizer::countOccurancesOfType(string word, bool label_)
+{
+    int ret = 0;
+    unsigned int word_array_size = getWordArraySize();
+    for (unsigned int i = 0; i < word_array_size; i++)
+    {
+        if (word_array[i] == word)
+        {
+            for (auto sentence : sentences)
+            {
+                if (sentence->sentence_array.size() > i)
+                {
+                    if (sentence->label == label_)
+                    {
+                        ret += sentence->sentence_array[i];
+                    }
+                }
+            }
+        }
+    }
+    return ret;
+}
+
 void CountVectorizer::save(std::ofstream& outFile) const
 {
     size_t word_array_size = word_array.size();
