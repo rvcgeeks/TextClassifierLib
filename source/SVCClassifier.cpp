@@ -1,39 +1,36 @@
 
-#include "LogisticRegressionClassifier.h"
+#include "SVCClassifier.h"
 
 #include <fstream>
 #include <iostream>
+#include "GlobalData.h"
 
-LogisticRegressionClassifier::LogisticRegressionClassifier()
+SVCClassifier::SVCClassifier()
 {
     CV.setBinary(false);
     CV.setCaseSensitive(false);
     CV.setIncludeStopWords(false);
     bias = 0.0;
-    epochs = 5;
-    learning_rate = 0.01;
+    epochs = 50;
+    learning_rate = 0.05;
+    regularization_param = 0.01;
 }
 
-LogisticRegressionClassifier::~LogisticRegressionClassifier()
+SVCClassifier::~SVCClassifier()
 {
 }
 
-double LogisticRegressionClassifier::sigmoid(double z) const
+double SVCClassifier::predict_margin(const std::vector<int>& features) const
 {
-    return 1.0 / (1.0 + exp(-z));
-}
-
-double LogisticRegressionClassifier::predict_proba(const std::vector<int>& features) const
-{
-    double z = bias;
+    double margin = bias;
     for (size_t i = 0; i < features.size(); ++i)
     {
-        z += weights[i] * features[i];
+        margin += weights[i] * features[i];
     }
-    return sigmoid(z);
+    return margin;
 }
 
-void LogisticRegressionClassifier::fit(std::string abs_filepath_to_features, std::string abs_filepath_to_labels)
+void SVCClassifier::fit(std::string abs_filepath_to_features, std::string abs_filepath_to_labels)
 {
     CV.fit(abs_filepath_to_features, abs_filepath_to_labels);
 
@@ -48,12 +45,13 @@ void LogisticRegressionClassifier::fit(std::string abs_filepath_to_features, std
     for (size_t i = 0; i < labels.size(); ++i)
     {
         label_file >> labels[i];
+        // Convert labels to +1 or -1 for SVM
+        labels[i] = labels[i] == 1 ? 1 : -1;
     }
     label_file.close();
 
     for (int epoch = 0; epoch < epochs; ++epoch)
     {
-        double total_loss = 0.0;
         for (size_t i = 0; i < sentences.size(); ++i)
         {
             const auto& sentence_map = sentences[i]->sentence_map;
@@ -64,36 +62,39 @@ void LogisticRegressionClassifier::fit(std::string abs_filepath_to_features, std
             }
 
             double y_true = labels[i];
-            double y_pred = predict_proba(features);
-            double error = y_pred - y_true;
-            total_loss += y_true * log(y_pred) + (1 - y_true) * log(1 - y_pred);
+            double margin = predict_margin(features);
 
-            for (size_t j = 0; j < features.size(); ++j)
+            if (y_true * margin < 1)
             {
-                weights[j] -= learning_rate * error * features[j];
+                for (size_t j = 0; j < features.size(); ++j)
+                {
+                    weights[j] += learning_rate * (y_true * features[j] - 2 * regularization_param * weights[j]);
+                }
+                bias += learning_rate * y_true;
             }
-            bias -= learning_rate * error;
-        }
-        total_loss = -total_loss / sentences.size();
-        if (epoch % 100 == 0)
-        {
-            std::cout << "Epoch " << epoch << " Loss: " << total_loss << std::endl;
+            else
+            {
+                for (size_t j = 0; j < features.size(); ++j)
+                {
+                    weights[j] += learning_rate * (-2 * regularization_param * weights[j]);
+                }
+            }
         }
     }
 }
 
-int LogisticRegressionClassifier::predict(std::string sentence)
+int SVCClassifier::predict(std::string sentence)
 {
     GlobalData vars;
     std::vector<string> processed_input = CV.buildSentenceVector(sentence);
     std::vector<int> feature_vector = CV.getSentenceFeatures(processed_input);
-    double probability = predict_proba(feature_vector);
+    double margin = predict_margin(feature_vector);
 
-    if (probability > 0.5)
+    if (margin > 0)
     {
         return vars.POS;
     }
-    else if (probability < 0.5)
+    else if (margin < 0)
     {
         return vars.NEG;
     }
@@ -103,7 +104,7 @@ int LogisticRegressionClassifier::predict(std::string sentence)
     }
 }
 
-void LogisticRegressionClassifier::predict(std::string abs_filepath_to_features, std::string abs_filepath_to_labels)
+void SVCClassifier::predict(std::string abs_filepath_to_features, std::string abs_filepath_to_labels)
 {
     std::ifstream in(abs_filepath_to_features);
     std::ofstream out(abs_filepath_to_labels);
@@ -131,7 +132,7 @@ void LogisticRegressionClassifier::predict(std::string abs_filepath_to_features,
     out.close();
 }
 
-void LogisticRegressionClassifier::save(const std::string& filename) const
+void SVCClassifier::save(const std::string& filename) const
 {
     std::ofstream outFile(filename, std::ios::binary);
     if (!outFile.is_open())
@@ -150,7 +151,7 @@ void LogisticRegressionClassifier::save(const std::string& filename) const
     outFile.close();
 }
 
-void LogisticRegressionClassifier::load(const std::string& filename)
+void SVCClassifier::load(const std::string& filename)
 {
     std::ifstream inFile(filename, std::ios::binary);
     if (!inFile.is_open())

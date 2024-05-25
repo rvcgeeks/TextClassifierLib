@@ -1,3 +1,4 @@
+
 #include "CountVectorizer.h"
 
 using namespace std;
@@ -71,22 +72,22 @@ void CountVectorizer::fit(string abs_filepath_to_features, string abs_filepath_t
         cout << "ERROR: Feature dimension is different from label dimension\n";
         return;
     }
-	
-	cout << "fitting CountVectorizer..." << endl;
-	int perc, prevperc;
-    
-	for (unsigned int i = 0; i < feature_size; i++)
+
+    cout << "fitting CountVectorizer..." << endl;
+    int perc, prevperc;
+
+    for (unsigned int i = 0; i < feature_size; i++)
     {
         addSentence(features[i], labels[i]);
 
-		prevperc = perc;
-		perc = int(float(i) / feature_size * 100);
-		if(prevperc != perc)
-		{
-			cout << perc << " % done" << endl;
-		}
+        prevperc = perc;
+        perc = int(float(i) / feature_size * 100);
+        if (prevperc != perc)
+        {
+            cout << perc << " % done" << endl;
+        }
     }
-	cout << endl;
+    cout << endl;
 }
 
 void CountVectorizer::shape()
@@ -132,16 +133,17 @@ void CountVectorizer::head()
 
 int CountVectorizer::is_wordInSentence(Sentence sentence_, unsigned int idx)
 {
-    return (sentence_.sentence_array.size() > idx && sentence_.sentence_array[idx]);
+    return sentence_.sentence_map.count(idx) ? 1 : 0;
 }
 
 void CountVectorizer::pushSentenceToWordArray(vector<string> new_sentence_vector)
 {
-    for (string word : new_sentence_vector)
+    for (const string& word : new_sentence_vector)
     {
         if (!CountVectorizerContainsWord(word))
         {
             word_array.push_back(word);
+            word_to_idx[word] = word_array.size() - 1;
         }
     }
 }
@@ -149,24 +151,23 @@ void CountVectorizer::pushSentenceToWordArray(vector<string> new_sentence_vector
 shared_ptr<Sentence> CountVectorizer::createSentenceObject(vector<string> new_sentence_vector, bool label_)
 {
     shared_ptr<Sentence> new_sentence(new Sentence);
-    unsigned int word_array_size = getWordArraySize();
-    for (unsigned int i = 0; i < word_array_size; i++)
+    for (const auto& word : new_sentence_vector)
     {
-        int count_ = count(new_sentence_vector.begin(), new_sentence_vector.end(), word_array[i]);
-        if (count_)
+        int idx = word_to_idx[word];
+        if (new_sentence->sentence_map.count(idx))
         {
-            if (binary)
-            {
-                new_sentence->sentence_array.push_back(1);
-            }
-            else
-            {
-                new_sentence->sentence_array.push_back(count_);
-            }
+            new_sentence->sentence_map[idx]++;
         }
         else
         {
-            new_sentence->sentence_array.push_back(0);
+            new_sentence->sentence_map[idx] = 1;
+        }
+    }
+    if (binary)
+    {
+        for (auto& entry : new_sentence->sentence_map)
+        {
+            entry.second = 1;
         }
     }
     new_sentence->label = label_;
@@ -182,16 +183,9 @@ void CountVectorizer::addSentence(string new_sentence, bool label_)
     sentences.push_back(sentObj);
 }
 
-bool CountVectorizer::CountVectorizerContainsWord(string word_to_check)
+bool CountVectorizer::CountVectorizerContainsWord(const string& word_to_check)
 {
-    for (string word : word_array)
-    {
-        if (word == word_to_check)
-        {
-            return true;
-        }
-    }
-    return false;
+    return word_to_idx.count(word_to_check) > 0;
 }
 
 vector<string> CountVectorizer::buildSentenceVector(string sentence_)
@@ -221,135 +215,137 @@ vector<string> CountVectorizer::buildSentenceVector(string sentence_)
         else if (vars.punctuation.count(x))
         {
             ret.push_back(new_word);
-            string s(1, x);
-            ret.push_back(s);
+            new_word = x;
+            ret.push_back(new_word);
             new_word = "";
         }
         else
         {
-            new_word = new_word + x;
+            new_word += x;
         }
     }
+
     if (new_word != "")
     {
         ret.push_back(new_word);
     }
-    return ret;
+
+    vector<string> fixed_ret;
+    for (const auto& s : ret)
+    {
+        if (!s.empty())
+        {
+            fixed_ret.push_back(s);
+        }
+    }
+    return fixed_ret;
 }
 
 int CountVectorizer::totalWords()
 {
-    int ret = 0;
-    for (auto sentence : sentences)
+    int count = 0;
+    for (const auto& sentence : sentences)
     {
-        for (auto count_ : sentence->sentence_array)
+        for (const auto& entry : sentence->sentence_map)
         {
-            ret += count_;
+            count += entry.second;
         }
     }
-    return ret;
+    return count;
 }
 
 int CountVectorizer::totalWordsOfType(bool label_)
 {
-    int ret = 0;
-    for (auto sentence : sentences)
+    int count = 0;
+    for (const auto& sentence : sentences)
     {
-        for (auto count_ : sentence->sentence_array)
+        if (sentence->label == label_)
         {
-            if (sentence->label == label_)
+            for (const auto& entry : sentence->sentence_map)
             {
-                ret += count_;
+                count += entry.second;
             }
         }
     }
-    return ret;
+    return count;
 }
 
-
-int CountVectorizer::countOccurances(string word)
+int CountVectorizer::countOccurances(const string& word)
 {
-    int ret = 0;
-    unsigned int word_array_size = getWordArraySize();
-    for (unsigned int i = 0; i < word_array_size; i++)
+    if (!CountVectorizerContainsWord(word))
     {
-        if (word_array[i] == word)
+        return 0;
+    }
+
+    int count = 0;
+    int idx = word_to_idx[word];
+    for (const auto& sentence : sentences)
+    {
+        if (sentence->sentence_map.count(idx))
         {
-            for (auto sentence : sentences)
-            {
-                if (sentence->sentence_array.size() > i)
-                {
-                    ret += sentence->sentence_array[i];
-                }
-            }
+            count += sentence->sentence_map[idx];
         }
     }
-    return ret;
+    return count;
 }
 
-int CountVectorizer::countOccurancesOfType(string word, bool label_)
+int CountVectorizer::countOccurancesOfType(const string& word, bool label_)
 {
-    int ret = 0;
-    unsigned int word_array_size = getWordArraySize();
-    for (unsigned int i = 0; i < word_array_size; i++)
+    if (!CountVectorizerContainsWord(word))
     {
-        if (word_array[i] == word)
+        return 0;
+    }
+
+    int count = 0;
+    int idx = word_to_idx[word];
+    for (const auto& sentence : sentences)
+    {
+        if (sentence->label == label_ && sentence->sentence_map.count(idx))
         {
-            for (auto sentence : sentences)
-            {
-                if (sentence->sentence_array.size() > i)
-                {
-                    if (sentence->label == label_)
-                    {
-                        ret += sentence->sentence_array[i];
-                    }
-                }
-            }
+            count += sentence->sentence_map[idx];
         }
     }
-    return ret;
+    return count;
+}
+
+std::vector<int> CountVectorizer::getSentenceFeatures(std::vector<std::string> sentence_words) const
+{
+    std::vector<int> sentence_features(word_array.size(), 0);
+    for (const std::string& word : sentence_words)
+    {
+        if (word_to_idx.count(word) > 0)
+        {
+            int idx = word_to_idx.at(word);
+            sentence_features[idx]++;
+        }
+    }
+    return sentence_features;
 }
 
 void CountVectorizer::save(std::ofstream& outFile) const
 {
     size_t word_array_size = word_array.size();
-    size_t sentences_size = sentences.size();
     outFile.write(reinterpret_cast<const char*>(&word_array_size), sizeof(word_array_size));
-    outFile.write(reinterpret_cast<const char*>(&sentences_size), sizeof(sentences_size));
-
     for (const auto& word : word_array)
     {
         size_t word_size = word.size();
         outFile.write(reinterpret_cast<const char*>(&word_size), sizeof(word_size));
-        outFile.write(word.c_str(), word_size);
+        outFile.write(word.data(), word_size);
     }
 
+    size_t sentence_size = sentences.size();
+    outFile.write(reinterpret_cast<const char*>(&sentence_size), sizeof(sentence_size));
     for (const auto& sentence : sentences)
     {
-        size_t sentence_array_size = sentence->sentence_array.size();
-        outFile.write(reinterpret_cast<const char*>(&sentence_array_size), sizeof(sentence_array_size));
+        size_t map_size = sentence->sentence_map.size();
+        outFile.write(reinterpret_cast<const char*>(&map_size), sizeof(map_size));
+        for (const auto& entry : sentence->sentence_map)
+        {
+            outFile.write(reinterpret_cast<const char*>(&entry.first), sizeof(entry.first));
+            outFile.write(reinterpret_cast<const char*>(&entry.second), sizeof(entry.second));
+        }
         outFile.write(reinterpret_cast<const char*>(&sentence->label), sizeof(sentence->label));
     }
-
-    vector<SparseNode> sparse_sentences;
-    for (size_t i = 0; i < sentences_size; ++i)
-    {
-        for (size_t j = 0; j < sentences[i]->sentence_array.size(); ++j)
-        {
-            SparseNode curr;
-            curr.row = i;
-            curr.col = j;
-            curr.data = sentences[i]->sentence_array[j];
-            if (curr.data != 0)
-            {
-                sparse_sentences.push_back(curr);
-            }
-        }
-    }
-
-    size_t sparse_sentences_size = sparse_sentences.size();
-    outFile.write(reinterpret_cast<const char*>(&sparse_sentences_size), sizeof(sparse_sentences_size));
-    outFile.write(reinterpret_cast<const char*>(sparse_sentences.data()), sparse_sentences_size * sizeof(SparseNode));
 
     outFile.write(reinterpret_cast<const char*>(&binary), sizeof(binary));
     outFile.write(reinterpret_cast<const char*>(&case_sensitive), sizeof(case_sensitive));
@@ -358,43 +354,42 @@ void CountVectorizer::save(std::ofstream& outFile) const
 
 void CountVectorizer::load(std::ifstream& inFile)
 {
-    size_t word_array_size, sentences_size;
-    inFile.read(reinterpret_cast<char*>(&word_array_size), sizeof(word_array_size));
-    inFile.read(reinterpret_cast<char*>(&sentences_size), sizeof(sentences_size));
+    word_array.clear();
+    word_to_idx.clear();
+    sentences.clear();
 
+    size_t word_array_size;
+    inFile.read(reinterpret_cast<char*>(&word_array_size), sizeof(word_array_size));
     word_array.resize(word_array_size);
-    for (auto& word : word_array)
+    for (size_t i = 0; i < word_array_size; ++i)
     {
         size_t word_size;
         inFile.read(reinterpret_cast<char*>(&word_size), sizeof(word_size));
-        word.resize(word_size);
-        inFile.read(&word[0], word_size);
+        word_array[i].resize(word_size);
+        inFile.read(&word_array[i][0], word_size);
+        word_to_idx[word_array[i]] = i;
     }
 
-    for (size_t i = 0; i < sentences_size; ++i)
+    size_t sentence_size;
+    inFile.read(reinterpret_cast<char*>(&sentence_size), sizeof(sentence_size));
+    sentences.resize(sentence_size);
+    for (size_t i = 0; i < sentence_size; ++i)
     {
-        size_t sentence_array_size;
-        auto sentence = std::make_shared<Sentence>();
-        inFile.read(reinterpret_cast<char*>(&sentence_array_size), sizeof(sentence_array_size));
+        auto sentence = make_shared<Sentence>();
+        size_t map_size;
+        inFile.read(reinterpret_cast<char*>(&map_size), sizeof(map_size));
+        for (size_t j = 0; j < map_size; ++j)
+        {
+            int key, value;
+            inFile.read(reinterpret_cast<char*>(&key), sizeof(key));
+            inFile.read(reinterpret_cast<char*>(&value), sizeof(value));
+            sentence->sentence_map[key] = value;
+        }
         inFile.read(reinterpret_cast<char*>(&sentence->label), sizeof(sentence->label));
-        sentence->sentence_array.resize(sentence_array_size);
-        fill(sentence->sentence_array.begin(), sentence->sentence_array.end(), 0);
-        sentences.push_back(sentence);
-    }
-
-    vector<SparseNode> sparse_sentences;
-    size_t maxcols, sparse_sentences_size;
-    inFile.read(reinterpret_cast<char*>(&sparse_sentences_size), sizeof(sparse_sentences_size));
-    sparse_sentences.resize(sparse_sentences_size);
-    inFile.read(reinterpret_cast<char*>(sparse_sentences.data()), sparse_sentences_size * sizeof(SparseNode));
-
-    for (size_t i = 0; i < sparse_sentences_size; ++i)
-    {
-        sentences[sparse_sentences[i].row]->sentence_array[sparse_sentences[i].col] = sparse_sentences[i].data;
+        sentences[i] = sentence;
     }
 
     inFile.read(reinterpret_cast<char*>(&binary), sizeof(binary));
     inFile.read(reinterpret_cast<char*>(&case_sensitive), sizeof(case_sensitive));
     inFile.read(reinterpret_cast<char*>(&include_stopwords), sizeof(include_stopwords));
 }
-

@@ -2,6 +2,7 @@
 #define GLOBALDATA_H__
 
 #include <string>
+#include <set>
 #include <vector>
 
 using namespace std;

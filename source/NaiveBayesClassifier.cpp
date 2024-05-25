@@ -6,6 +6,8 @@ NaiveBayesClassifier::NaiveBayesClassifier()
     CV.setBinary(false);
     CV.setCaseSensitive(false);
     CV.setIncludeStopWords(false);
+    smoothing_param_m = 1.0;
+    smoothing_param_p = 0.5;
 }
 
 NaiveBayesClassifier::~NaiveBayesClassifier()
@@ -16,12 +18,9 @@ void NaiveBayesClassifier::fit(string abs_filepath_to_features, string abs_filep
 {
     CV.fit(abs_filepath_to_features, abs_filepath_to_labels);
 
-    smoothing_param_m = 1.0;
-    smoothing_param_p = 0.5;
+    cout << "fitting NaiveBayesClassifier..." << endl;
 
-	cout << "fitting NaiveBayesClassifier..." << endl;
-
-	int total_words = CV.totalWords();
+    int total_words = CV.totalWords();
 
     total_words_of_type_true = CV.totalWordsOfType(true);
     logp_true = log((float)total_words_of_type_true / (float)total_words);
@@ -29,12 +28,10 @@ void NaiveBayesClassifier::fit(string abs_filepath_to_features, string abs_filep
     total_words_of_type_false = CV.totalWordsOfType(false);
     logp_false = log((float)total_words_of_type_false / (float)total_words);
 
-	cout << "total_words_of_type_true = " << total_words_of_type_true << endl
-		 << "logp_true = " << logp_true << endl
-		 << "total_words_of_type_false = " << total_words_of_type_false << endl
-		 << "logp_false = " << logp_false << endl
-		 << "smoothing_param_m = " << smoothing_param_m << endl
-		 << "smoothing_param_p = " << smoothing_param_p << endl;
+    cout << "total_words_of_type_true = " << total_words_of_type_true << endl
+        << "logp_true = " << logp_true << endl
+        << "total_words_of_type_false = " << total_words_of_type_false << endl
+        << "logp_false = " << logp_false << endl;
 }
 
 int NaiveBayesClassifier::predict(string sentence)
@@ -48,19 +45,19 @@ int NaiveBayesClassifier::predict(string sentence)
     float mp = smoothing_param_m * smoothing_param_p;
     float m = smoothing_param_m;
 
-	trueWeight = logp_true;
-	for (auto word : processed_input)
+    trueWeight = logp_true;
+    for (auto word : processed_input)
     {
         trueWeight += log(((float)CV.countOccurancesOfType(word, true) + mp) / ((float)total_words_of_type_true + m));
     }
 
-	falseWeight = logp_false;
-	for (auto word : processed_input)
+    falseWeight = logp_false;
+    for (auto word : processed_input)
     {
         falseWeight += log(((float)CV.countOccurancesOfType(word, false) + mp) / ((float)total_words_of_type_false + m));
     }
-	
-	if (trueWeight < falseWeight)
+
+    if (trueWeight < falseWeight)
     {
         return vars.NEG;
     }
@@ -120,8 +117,6 @@ void NaiveBayesClassifier::save(const std::string& filename) const
     outFile.write(reinterpret_cast<const char*>(&logp_true), sizeof(logp_true));
     outFile.write(reinterpret_cast<const char*>(&total_words_of_type_false), sizeof(total_words_of_type_false));
     outFile.write(reinterpret_cast<const char*>(&logp_false), sizeof(logp_false));
-    outFile.write(reinterpret_cast<const char*>(&smoothing_param_m), sizeof(smoothing_param_m));
-    outFile.write(reinterpret_cast<const char*>(&smoothing_param_p), sizeof(smoothing_param_p));
 
     outFile.close();
 }
@@ -141,8 +136,6 @@ void NaiveBayesClassifier::load(const std::string& filename)
     inFile.read(reinterpret_cast<char*>(&logp_true), sizeof(logp_true));
     inFile.read(reinterpret_cast<char*>(&total_words_of_type_false), sizeof(total_words_of_type_false));
     inFile.read(reinterpret_cast<char*>(&logp_false), sizeof(logp_false));
-    inFile.read(reinterpret_cast<char*>(&smoothing_param_m), sizeof(smoothing_param_m));
-    inFile.read(reinterpret_cast<char*>(&smoothing_param_p), sizeof(smoothing_param_p));
 
     inFile.close();
 }
