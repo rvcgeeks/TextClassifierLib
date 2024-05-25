@@ -81,11 +81,6 @@ public:
 	void setBinary(bool bool_) { binary = bool_; }  // protected
 	void setCaseSensitive(bool bool_) { case_sensitive = bool_; }
 	void setIncludeStopWords(bool bool_) { include_stopwords = bool_; }
-
-	int totalWords();
-	int totalWordsOfType(bool label_);
-	int countOccurances(const string& word);
-	int countOccurancesOfType(const string& word, bool label_);
 	std::vector<int> getSentenceFeatures(std::vector<std::string> sentence_words) const;
 
 	// Functions to load and save model

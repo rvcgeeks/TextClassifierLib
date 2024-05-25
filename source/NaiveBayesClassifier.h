@@ -2,26 +2,28 @@
 #define NAIVEBAYESCLASSIFIER_H__
 
 #include <cmath>
+#include <vector>
+#include <unordered_map>
 #include "BaseClassifier.h"
 
-class NaiveBayesClassifier: public BaseClassifier
+class NaiveBayesClassifier : public BaseClassifier
 {
 public:
     NaiveBayesClassifier();
     ~NaiveBayesClassifier();
-    void fit(string abs_filepath_to_features, string abs_filepath_to_labels) override;
-    void predict(string abs_filepath_to_features, string abs_filepath_to_labels) override;
-    int predict(string sentence) override;
+    void fit(std::string abs_filepath_to_features, std::string abs_filepath_to_labels);
+    void predict(std::string abs_filepath_to_features, std::string abs_filepath_to_labels) override;
+    int predict(std::string sentence) override;
     void save(const std::string& filename) const override;
     void load(const std::string& filename) override;
 
 private:
-    int total_words_of_type_true;
-    float logp_true;
-    int total_words_of_type_false;
-    float logp_false;
-    float smoothing_param_m;
-    float smoothing_param_p;
+    std::unordered_map<int, double> log_prob_pos;
+    std::unordered_map<int, double> log_prob_neg;
+    double log_prior_pos;
+    double log_prior_neg;
+
+    double calculate_log_probability(const std::vector<int>& features, bool is_positive) const;
 };
 
 #endif // NAIVEBAYESCLASSIFIER_H__

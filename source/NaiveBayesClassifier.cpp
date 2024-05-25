@@ -1,69 +1,99 @@
 
 #include "NaiveBayesClassifier.h"
 
+#include <fstream>
+#include <iostream>
+#include <cmath>
+
 NaiveBayesClassifier::NaiveBayesClassifier()
 {
     CV.setBinary(false);
     CV.setCaseSensitive(false);
     CV.setIncludeStopWords(false);
-    smoothing_param_m = 1.0;
-    smoothing_param_p = 0.5;
 }
 
 NaiveBayesClassifier::~NaiveBayesClassifier()
 {
 }
 
-void NaiveBayesClassifier::fit(string abs_filepath_to_features, string abs_filepath_to_labels)
+void NaiveBayesClassifier::fit(std::string abs_filepath_to_features, std::string abs_filepath_to_labels)
 {
     CV.fit(abs_filepath_to_features, abs_filepath_to_labels);
 
-    cout << "fitting NaiveBayesClassifier..." << endl;
+    std::vector<std::shared_ptr<Sentence>> sentences = CV.sentences;
+    int num_sentences = sentences.size();
 
-    int total_words = CV.totalWords();
+    int num_pos = 0;
+    int num_neg = 0;
+    std::unordered_map<int, int> word_count_pos;
+    std::unordered_map<int, int> word_count_neg;
+    int total_words_pos = 0;
+    int total_words_neg = 0;
 
-    total_words_of_type_true = CV.totalWordsOfType(true);
-    logp_true = log((float)total_words_of_type_true / (float)total_words);
+    for (const auto& sentence : sentences)
+    {
+        if (sentence->label)
+        {
+            num_pos++;
+            for (const auto& entry : sentence->sentence_map)
+            {
+                word_count_pos[entry.first] += entry.second;
+                total_words_pos += entry.second;
+            }
+        }
+        else
+        {
+            num_neg++;
+            for (const auto& entry : sentence->sentence_map)
+            {
+                word_count_neg[entry.first] += entry.second;
+                total_words_neg += entry.second;
+            }
+        }
+    }
 
-    total_words_of_type_false = CV.totalWordsOfType(false);
-    logp_false = log((float)total_words_of_type_false / (float)total_words);
+    log_prior_pos = std::log(static_cast<double>(num_pos) / num_sentences);
+    log_prior_neg = std::log(static_cast<double>(num_neg) / num_sentences);
 
-    cout << "total_words_of_type_true = " << total_words_of_type_true << endl
-        << "logp_true = " << logp_true << endl
-        << "total_words_of_type_false = " << total_words_of_type_false << endl
-        << "logp_false = " << logp_false << endl;
+    for (const auto& word : CV.word_array)
+    {
+        int idx = CV.word_to_idx[word];
+        log_prob_pos[idx] = std::log((word_count_pos[idx] + 1.0) / (total_words_pos + CV.getWordArraySize()));
+        log_prob_neg[idx] = std::log((word_count_neg[idx] + 1.0) / (total_words_neg + CV.getWordArraySize()));
+    }
 }
 
-int NaiveBayesClassifier::predict(string sentence)
+double NaiveBayesClassifier::calculate_log_probability(const std::vector<int>& features, bool is_positive) const
+{
+    double log_prob = is_positive ? log_prior_pos : log_prior_neg;
+    const auto& log_prob_map = is_positive ? log_prob_pos : log_prob_neg;
+
+    for (size_t i = 0; i < features.size(); ++i)
+    {
+        if (features[i] > 0)
+        {
+            log_prob += features[i] * log_prob_map.at(i);
+        }
+    }
+    return log_prob;
+}
+
+int NaiveBayesClassifier::predict(std::string sentence)
 {
     GlobalData vars;
-    vector<string> processed_input;
+    std::vector<std::string> processed_input = CV.buildSentenceVector(sentence);
+    std::vector<int> feature_vector = CV.getSentenceFeatures(processed_input);
 
-    processed_input = CV.buildSentenceVector(sentence);
+    double log_prob_pos = calculate_log_probability(feature_vector, true);
+    double log_prob_neg = calculate_log_probability(feature_vector, false);
 
-    float trueWeight, falseWeight;
-    float mp = smoothing_param_m * smoothing_param_p;
-    float m = smoothing_param_m;
-
-    trueWeight = logp_true;
-    for (auto word : processed_input)
-    {
-        trueWeight += log(((float)CV.countOccurancesOfType(word, true) + mp) / ((float)total_words_of_type_true + m));
-    }
-
-    falseWeight = logp_false;
-    for (auto word : processed_input)
-    {
-        falseWeight += log(((float)CV.countOccurancesOfType(word, false) + mp) / ((float)total_words_of_type_false + m));
-    }
-
-    if (trueWeight < falseWeight)
-    {
-        return vars.NEG;
-    }
-    else if (trueWeight > falseWeight)
+    if (log_prob_pos > log_prob_neg)
     {
         return vars.POS;
+    }
+    else if (log_prob_neg > log_prob_pos)
+    {
+        return vars.NEG;
     }
     else
     {
@@ -71,31 +101,28 @@ int NaiveBayesClassifier::predict(string sentence)
     }
 }
 
-void NaiveBayesClassifier::predict(string abs_filepath_to_features, string abs_filepath_to_labels)
+void NaiveBayesClassifier::predict(std::string abs_filepath_to_features, std::string abs_filepath_to_labels)
 {
-    ifstream in;
-    ofstream out;
-    string feature_input;
-    int label_output;
+    std::ifstream in(abs_filepath_to_features);
+    std::ofstream out(abs_filepath_to_labels);
+    std::string feature_input;
 
-    in.open(abs_filepath_to_features);
     if (!in)
     {
-        cout << "ERROR: Cannot open features file.\n";
+        std::cerr << "ERROR: Cannot open features file.\n";
         return;
     }
 
-    out.open(abs_filepath_to_labels);
     if (!out)
     {
-        cout << "ERROR: Cannot open labels file.\n";
+        std::cerr << "ERROR: Cannot open labels file.\n";
         return;
     }
 
     while (getline(in, feature_input))
     {
-        label_output = predict(feature_input);
-        out << label_output << endl;
+        int label_output = predict(feature_input);
+        out << label_output << std::endl;
     }
 
     in.close();
@@ -113,10 +140,26 @@ void NaiveBayesClassifier::save(const std::string& filename) const
 
     CV.save(outFile);
 
-    outFile.write(reinterpret_cast<const char*>(&total_words_of_type_true), sizeof(total_words_of_type_true));
-    outFile.write(reinterpret_cast<const char*>(&logp_true), sizeof(logp_true));
-    outFile.write(reinterpret_cast<const char*>(&total_words_of_type_false), sizeof(total_words_of_type_false));
-    outFile.write(reinterpret_cast<const char*>(&logp_false), sizeof(logp_false));
+    size_t size;
+
+    size = log_prob_pos.size();
+    outFile.write(reinterpret_cast<const char*>(&size), sizeof(size));
+    for (const auto& pair : log_prob_pos)
+    {
+        outFile.write(reinterpret_cast<const char*>(&pair.first), sizeof(pair.first));
+        outFile.write(reinterpret_cast<const char*>(&pair.second), sizeof(pair.second));
+    }
+
+    size = log_prob_neg.size();
+    outFile.write(reinterpret_cast<const char*>(&size), sizeof(size));
+    for (const auto& pair : log_prob_neg)
+    {
+        outFile.write(reinterpret_cast<const char*>(&pair.first), sizeof(pair.first));
+        outFile.write(reinterpret_cast<const char*>(&pair.second), sizeof(pair.second));
+    }
+
+    outFile.write(reinterpret_cast<const char*>(&log_prior_pos), sizeof(log_prior_pos));
+    outFile.write(reinterpret_cast<const char*>(&log_prior_neg), sizeof(log_prior_neg));
 
     outFile.close();
 }
@@ -132,10 +175,32 @@ void NaiveBayesClassifier::load(const std::string& filename)
 
     CV.load(inFile);
 
-    inFile.read(reinterpret_cast<char*>(&total_words_of_type_true), sizeof(total_words_of_type_true));
-    inFile.read(reinterpret_cast<char*>(&logp_true), sizeof(logp_true));
-    inFile.read(reinterpret_cast<char*>(&total_words_of_type_false), sizeof(total_words_of_type_false));
-    inFile.read(reinterpret_cast<char*>(&logp_false), sizeof(logp_false));
+    size_t size;
+
+    inFile.read(reinterpret_cast<char*>(&size), sizeof(size));
+    log_prob_pos.clear();
+    for (size_t i = 0; i < size; ++i)
+    {
+        int key;
+        double value;
+        inFile.read(reinterpret_cast<char*>(&key), sizeof(key));
+        inFile.read(reinterpret_cast<char*>(&value), sizeof(value));
+        log_prob_pos[key] = value;
+    }
+
+    inFile.read(reinterpret_cast<char*>(&size), sizeof(size));
+    log_prob_neg.clear();
+    for (size_t i = 0; i < size; ++i)
+    {
+        int key;
+        double value;
+        inFile.read(reinterpret_cast<char*>(&key), sizeof(key));
+        inFile.read(reinterpret_cast<char*>(&value), sizeof(value));
+        log_prob_neg[key] = value;
+    }
+
+    inFile.read(reinterpret_cast<char*>(&log_prior_pos), sizeof(log_prior_pos));
+    inFile.read(reinterpret_cast<char*>(&log_prior_neg), sizeof(log_prior_neg));
 
     inFile.close();
 }
