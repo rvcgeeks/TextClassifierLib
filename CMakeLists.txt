@@ -19,4 +19,4 @@ file(GLOB USER_FILES
 )
 
 # create an executable for main.cpp in app folder
-add_executable( mltextclassifier "app/mltextclassifier.cpp" ${USER_FILES} )
+add_executable( mltextclassifier "app/main.cpp" ${USER_FILES} )

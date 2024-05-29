@@ -90,6 +90,9 @@ public:
 	friend class NaiveBayesClassifier;
 	friend class LogisticRegressionClassifier;
 	friend class SVCClassifier;
+	friend class KNNClassifier;
+	friend class RandomForestClassifier;
+	friend class GradientBoostingClassifier;
 
 private:
 	vector<string> word_array;  // Make protected (all)
