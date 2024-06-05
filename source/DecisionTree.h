@@ -6,6 +6,7 @@
 #include <string>
 #include <fstream>
 
+#include "BaseClassifier.h"
 #include "CountVectorizer.h"
 
 class DecisionTree
@@ -15,7 +16,7 @@ public:
     ~DecisionTree();
 
     void fit(const CountVectorizer& CV, const std::vector<std::shared_ptr<Sentence>>& sentences);
-    int predict(const std::vector<int>& features) const;
+    Prediction predict(const std::vector<int>& features) const;
     void save(std::ofstream& outFile) const;
     void load(std::ifstream& inFile);
 
@@ -24,20 +25,23 @@ private:
     {
         int feature_index;
         int label;
+        int total_samples;
+        int pos_samples;
         std::shared_ptr<Node> left;
         std::shared_ptr<Node> right;
 
-        Node(int feature_index = -1, int label = -1) : feature_index(feature_index), label(label) {}
+        Node(int feature_index = -1, int label = -1, int total_samples = 0, int pos_samples = 0)
+            : feature_index(feature_index), label(label), total_samples(total_samples), pos_samples(pos_samples) {}
     };
 
     std::shared_ptr<Node> root;
     int max_depth;
 
     std::shared_ptr<Node> buildTree(const std::vector<std::shared_ptr<Sentence>>& sentences, int depth);
-    int majorityClass(const std::vector<std::shared_ptr<Sentence>>& sentences) const;
+    int majorityClass(const std::vector<std::shared_ptr<Sentence>>& sentences, int& total_samples, int& pos_samples) const;
     double giniIndex(const std::vector<std::shared_ptr<Sentence>>& left, const std::vector<std::shared_ptr<Sentence>>& right) const;
     void split(const std::vector<std::shared_ptr<Sentence>>& sentences, int feature_index, std::vector<std::shared_ptr<Sentence>>& left, std::vector<std::shared_ptr<Sentence>>& right) const;
-    int predictNode(const std::shared_ptr<Node>& node, const std::vector<int>& features) const;
+    Prediction predictNode(const std::shared_ptr<Node>& node, const std::vector<int>& features) const;
     void saveNode(std::ofstream& outFile, const std::shared_ptr<Node>& node) const;
     std::shared_ptr<Node> loadNode(std::ifstream& inFile);
 };

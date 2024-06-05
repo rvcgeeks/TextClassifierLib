@@ -18,7 +18,7 @@ GradientBoostingClassifier::~GradientBoostingClassifier()
 
 double GradientBoostingClassifier::predict_tree(const DecisionTree& tree, const std::vector<int>& features) const
 {
-    return tree.predict(features);
+    return tree.predict(features).label;
 }
 
 double GradientBoostingClassifier::predict_proba(const std::vector<int>& features) const
@@ -75,21 +75,26 @@ void GradientBoostingClassifier::fit(std::string abs_filepath_to_features, std::
     }
 }
 
-int GradientBoostingClassifier::predict(std::string sentence)
+Prediction GradientBoostingClassifier::predict(std::string sentence)
 {
     GlobalData vars;
+    Prediction result;
     std::vector<std::string> processed_input = CV.buildSentenceVector(sentence);
     std::vector<int> feature_vector = CV.getSentenceFeatures(processed_input);
     double probability = predict_proba(feature_vector);
 
+    result.probability = probability;
+
     if (probability > 0.5)
     {
-        return vars.POS;
+        result.label = vars.POS;
     }
     else
     {
-        return vars.NEG;
+        result.label = vars.NEG;
     }
+
+    return result;
 }
 
 void GradientBoostingClassifier::predict(std::string abs_filepath_to_features, std::string abs_filepath_to_labels)
@@ -112,8 +117,8 @@ void GradientBoostingClassifier::predict(std::string abs_filepath_to_features, s
 
     while (getline(in, feature_input))
     {
-        int label_output = predict(feature_input);
-        out << label_output << std::endl;
+        Prediction result = predict(feature_input);
+        out << result.label << "," << result.probability << std::endl;
     }
 
     in.close();

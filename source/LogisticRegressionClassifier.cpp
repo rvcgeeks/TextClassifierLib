@@ -82,25 +82,26 @@ void LogisticRegressionClassifier::fit(std::string abs_filepath_to_features, std
     }
 }
 
-int LogisticRegressionClassifier::predict(std::string sentence)
+Prediction LogisticRegressionClassifier::predict(std::string sentence)
 {
     GlobalData vars;
+    Prediction result;
     std::vector<string> processed_input = CV.buildSentenceVector(sentence);
     std::vector<int> feature_vector = CV.getSentenceFeatures(processed_input);
     double probability = predict_proba(feature_vector);
+    
+    result.probability = probability;
 
     if (probability > 0.5)
     {
-        return vars.POS;
-    }
-    else if (probability < 0.5)
-    {
-        return vars.NEG;
+        result.label = vars.POS;
     }
     else
     {
-        return vars.NEU;
+        result.label = vars.NEG;
     }
+
+    return result;
 }
 
 void LogisticRegressionClassifier::predict(std::string abs_filepath_to_features, std::string abs_filepath_to_labels)
@@ -123,8 +124,8 @@ void LogisticRegressionClassifier::predict(std::string abs_filepath_to_features,
 
     while (getline(in, feature_input))
     {
-        int label_output = predict(feature_input);
-        out << label_output << std::endl;
+        Prediction result = predict(feature_input);
+        out << result.label << "," << result.probability << std::endl;
     }
 
     in.close();

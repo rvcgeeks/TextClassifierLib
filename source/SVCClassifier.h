@@ -12,7 +12,7 @@ public:
     ~SVCClassifier();
     void fit(std::string abs_filepath_to_features, std::string abs_filepath_to_labels);
     void predict(string abs_filepath_to_features, string abs_filepath_to_labels) override;
-    int predict(string sentence) override;
+    Prediction predict(string sentence) override;
     void save(const std::string& filename) const override;
     void load(const std::string& filename) override;
 

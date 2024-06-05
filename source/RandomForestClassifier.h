@@ -15,7 +15,7 @@ public:
     
     void fit(std::string abs_filepath_to_features, std::string abs_filepath_to_labels);
     void predict(std::string abs_filepath_to_features, std::string abs_filepath_to_labels) override;
-    int predict(std::string sentence) override;
+    Prediction predict(std::string sentence) override;
     void save(const std::string& filename) const override;
     void load(const std::string& filename) override;
 

@@ -71,8 +71,10 @@ int main(int argc, char **argv)
 
 	// txtclsfr 1 2 my_model.bin "This is string to classify" 
 	} else if(argv[1][0] == '1') {
+		Prediction result;
 		pclsfr->load(argv[3]);
-		cout << pclsfr->predict(argv[4]) << endl;
+		result = pclsfr->predict(argv[4]);
+		cout << result.label << "    "<< result.probability << endl;
 	}
 
 	delete pclsfr;

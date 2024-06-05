@@ -89,3 +89,47 @@ double KDTree::calculateDistance(const std::vector<int>& a, const std::vector<in
     }
     return std::sqrt(sum);
 }
+
+std::vector<double> KDTree::getClosestDistances(const std::vector<int>& point, int k)
+{
+    // Min heap to store distances
+    std::priority_queue<double> closest_distances;
+
+    // Recursive function to find k nearest neighbors
+    findKNearest(root, point, closest_distances, k, 0);
+
+    // Convert the min heap to a vector and return
+    std::vector<double> result;
+    while (!closest_distances.empty()) {
+        result.push_back(closest_distances.top());
+        closest_distances.pop();
+    }
+    std::reverse(result.begin(), result.end()); // Reversing to get the distances in ascending order
+    return result;
+}
+
+void KDTree::findKNearest(KDNode* root, const std::vector<int>& target, std::priority_queue<double>& closest_distances, int k, int depth)
+{
+    if (!root) return;
+
+    double d = calculateDistance(root->point, target);
+
+    // If the queue is not full yet or the current distance is less than the maximum distance in the queue
+    if (closest_distances.size() < k || d < closest_distances.top())
+    {
+        closest_distances.push(d);
+        if (closest_distances.size() > k) {
+            closest_distances.pop(); // Remove the maximum distance if the queue size exceeds k
+        }
+    }
+
+    int axis = depth % dimension;
+    KDNode* next = target[axis] < root->point[axis] ? root->left : root->right;
+    KDNode* other = target[axis] < root->point[axis] ? root->right : root->left;
+
+    findKNearest(next, target, closest_distances, k, depth + 1);
+    if (std::abs(target[axis] - root->point[axis]) < closest_distances.top())
+    {
+        findKNearest(other, target, closest_distances, k, depth + 1);
+    }
+}

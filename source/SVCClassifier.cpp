@@ -83,25 +83,26 @@ void SVCClassifier::fit(std::string abs_filepath_to_features, std::string abs_fi
     }
 }
 
-int SVCClassifier::predict(std::string sentence)
+Prediction SVCClassifier::predict(std::string sentence)
 {
     GlobalData vars;
+    Prediction result;
     std::vector<string> processed_input = CV.buildSentenceVector(sentence);
     std::vector<int> feature_vector = CV.getSentenceFeatures(processed_input);
     double margin = predict_margin(feature_vector);
+    
+    result.probability = 1.0 / (1.0 + std::exp(-margin));
 
     if (margin > 0)
     {
-        return vars.POS;
-    }
-    else if (margin < 0)
-    {
-        return vars.NEG;
+        result.label = vars.POS;
     }
     else
     {
-        return vars.NEU;
+        result.label = vars.NEG;
     }
+
+    return result;
 }
 
 void SVCClassifier::predict(std::string abs_filepath_to_features, std::string abs_filepath_to_labels)
@@ -124,8 +125,8 @@ void SVCClassifier::predict(std::string abs_filepath_to_features, std::string ab
 
     while (getline(in, feature_input))
     {
-        int label_output = predict(feature_input);
-        out << label_output << std::endl;
+        Prediction result = predict(feature_input);
+        out << result.label << "," << result.probability << std::endl;
     }
 
     in.close();

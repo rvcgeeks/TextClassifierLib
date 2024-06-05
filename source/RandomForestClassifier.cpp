@@ -30,20 +30,47 @@ void RandomForestClassifier::fit(std::string abs_filepath_to_features, std::stri
     }
 }
 
-int RandomForestClassifier::predict(std::string sentence)
+Prediction RandomForestClassifier::predict(std::string sentence)
 {
     GlobalData vars;
+    Prediction result;
+
     std::vector<std::string> processed_input = CV.buildSentenceVector(sentence);
     std::vector<int> feature_vector = CV.getSentenceFeatures(processed_input);
-    
+
     std::vector<int> votes(3, 0); // Assuming 3 classes: POS, NEG, NEU
     for (const auto& tree : trees)
     {
-        int prediction = tree->predict(feature_vector);
+        int prediction = tree->predict(feature_vector).label;
         votes[prediction]++;
     }
-    
-    return std::distance(votes.begin(), std::max_element(votes.begin(), votes.end()));
+
+    std::vector<double> probabilities(3, 0.0);
+    for (size_t i = 0; i < votes.size(); ++i)
+    {
+        probabilities[i] = static_cast<double>(votes[i]) / trees.size();
+    }
+
+    int max_index = std::distance(votes.begin(), std::max_element(votes.begin(), votes.end()));
+
+    result.probability = probabilities[1];
+
+    switch (max_index)
+    {
+    case 0:
+        result.label = vars.NEG;
+        break;
+    case 1:
+        result.label = vars.POS;
+        break;
+    case 2:
+        result.label = vars.NEU;
+        break;
+    default:
+        break;
+    }
+
+    return result;
 }
 
 void RandomForestClassifier::predict(std::string abs_filepath_to_features, std::string abs_filepath_to_labels)
@@ -66,8 +93,8 @@ void RandomForestClassifier::predict(std::string abs_filepath_to_features, std::
 
     while (getline(in, feature_input))
     {
-        int label_output = predict(feature_input);
-        out << label_output << std::endl;
+        Prediction result = predict(feature_input);
+        out << result.label << "," << result.probability << std::endl;
     }
 
     in.close();

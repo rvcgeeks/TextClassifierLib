@@ -6,6 +6,12 @@
 
 using namespace std;
 
+struct Prediction
+{
+    int label;
+    double probability;
+};
+
 class BaseClassifier
 {
 public:  // protected
@@ -16,7 +22,7 @@ public:  // protected
     void head();
     virtual void fit(string abs_filepath_to_features, string abs_filepath_to_labels) = 0;
     virtual void predict(string abs_filepath_to_features, string abs_filepath_to_labels) = 0;
-    virtual int predict(string sentence) = 0;
+    virtual Prediction predict(string sentence) = 0;
     virtual void save(const std::string& filename) const = 0;
     virtual void load(const std::string& filename) = 0;
 };

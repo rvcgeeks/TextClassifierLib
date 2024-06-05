@@ -78,27 +78,33 @@ double NaiveBayesClassifier::calculate_log_probability(const std::vector<int>& f
     return log_prob;
 }
 
-int NaiveBayesClassifier::predict(std::string sentence)
+Prediction NaiveBayesClassifier::predict(std::string sentence)
 {
     GlobalData vars;
+    Prediction result;
     std::vector<std::string> processed_input = CV.buildSentenceVector(sentence);
     std::vector<int> feature_vector = CV.getSentenceFeatures(processed_input);
 
     double log_prob_pos = calculate_log_probability(feature_vector, true);
     double log_prob_neg = calculate_log_probability(feature_vector, false);
 
+    double max_log_prob = std::max(log_prob_pos, log_prob_neg);
+    double exp_log_prob_pos = std::exp(log_prob_pos - max_log_prob);
+    double exp_log_prob_neg = std::exp(log_prob_neg - max_log_prob);
+    double sum_exp_log_probs = exp_log_prob_pos + exp_log_prob_neg;
+
+    result.probability = exp_log_prob_pos / sum_exp_log_probs;
+
     if (log_prob_pos > log_prob_neg)
     {
-        return vars.POS;
-    }
-    else if (log_prob_neg > log_prob_pos)
-    {
-        return vars.NEG;
+        result.label = vars.POS;
     }
     else
     {
-        return vars.NEU;
+        result.label = vars.NEG;
     }
+
+    return result;
 }
 
 void NaiveBayesClassifier::predict(std::string abs_filepath_to_features, std::string abs_filepath_to_labels)
@@ -121,8 +127,8 @@ void NaiveBayesClassifier::predict(std::string abs_filepath_to_features, std::st
 
     while (getline(in, feature_input))
     {
-        int label_output = predict(feature_input);
-        out << label_output << std::endl;
+        Prediction result = predict(feature_input);
+        out << result.label << "," << result.probability << std::endl;
     }
 
     in.close();

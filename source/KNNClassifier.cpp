@@ -66,20 +66,32 @@ void KNNClassifier::predict(std::string abs_filepath_to_features, std::string ab
 
     while (getline(in, feature_input))
     {
-        int label_output = predict(feature_input);
-        out << label_output << std::endl;
+        Prediction result = predict(feature_input);
+        out << result.label << "," << result.probability << std::endl;
     }
 
     in.close();
     out.close();
 }
 
-int KNNClassifier::predict(std::string sentence)
+Prediction KNNClassifier::predict(std::string sentence)
 {
     GlobalData vars;
     std::vector<std::string> processed_input = CV.buildSentenceVector(sentence);
     std::vector<int> feature_vector = CV.getSentenceFeatures(processed_input);
-    return kd_tree.nearestNeighbor(feature_vector);
+
+    int label = kd_tree.nearestNeighbor(feature_vector);
+
+    // Calculate probability
+    double total_distance = 0.0;
+    std::vector<double> closest_distances = kd_tree.getClosestDistances(feature_vector, k);
+    for (double dist : closest_distances)
+    {
+        total_distance += dist;
+    }
+    double probability = 1.0 - (total_distance / closest_distances.size());
+
+    return { label, probability };
 }
 
 int KNNClassifier::getLabel(const std::vector<int>& features) const
