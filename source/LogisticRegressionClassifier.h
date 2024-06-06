@@ -8,7 +8,7 @@
 class LogisticRegressionClassifier: public BaseClassifier
 {
 public:
-    LogisticRegressionClassifier();
+    LogisticRegressionClassifier(int vectorizerid = ID_VECTORIZER_COUNT);
     ~LogisticRegressionClassifier();
     void fit(std::string abs_filepath_to_features, std::string abs_filepath_to_labels);
     void predict(string abs_filepath_to_features, string abs_filepath_to_labels) override;
@@ -22,7 +22,7 @@ private:
     int epochs;
     double learning_rate;
     double sigmoid(double z) const;
-    double predict_proba(const std::vector<int>& features) const;
+    double predict_proba(const std::vector<double>& features) const;
 };
 
 #endif // LOGISTICREGRESSIONCLASSIFIER_H__

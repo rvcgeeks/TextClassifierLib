@@ -7,7 +7,7 @@
 #include <fstream>
 
 #include "BaseClassifier.h"
-#include "CountVectorizer.h"
+#include "BaseVectorizer.h"
 
 class DecisionTree
 {
@@ -15,8 +15,8 @@ public:
     DecisionTree(int max_depth = 10);
     ~DecisionTree();
 
-    void fit(const CountVectorizer& CV, const std::vector<std::shared_ptr<Sentence>>& sentences);
-    Prediction predict(const std::vector<int>& features) const;
+    void fit(const std::vector<std::shared_ptr<Sentence>>& sentences);
+    Prediction predict(const std::vector<double>& features) const;
     void save(std::ofstream& outFile) const;
     void load(std::ifstream& inFile);
 
@@ -41,7 +41,7 @@ private:
     int majorityClass(const std::vector<std::shared_ptr<Sentence>>& sentences, int& total_samples, int& pos_samples) const;
     double giniIndex(const std::vector<std::shared_ptr<Sentence>>& left, const std::vector<std::shared_ptr<Sentence>>& right) const;
     void split(const std::vector<std::shared_ptr<Sentence>>& sentences, int feature_index, std::vector<std::shared_ptr<Sentence>>& left, std::vector<std::shared_ptr<Sentence>>& right) const;
-    Prediction predictNode(const std::shared_ptr<Node>& node, const std::vector<int>& features) const;
+    Prediction predictNode(const std::shared_ptr<Node>& node, const std::vector<double>& features) const;
     void saveNode(std::ofstream& outFile, const std::shared_ptr<Node>& node) const;
     std::shared_ptr<Node> loadNode(std::ifstream& inFile);
 };

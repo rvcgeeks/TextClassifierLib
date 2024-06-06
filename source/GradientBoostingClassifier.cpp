@@ -4,24 +4,39 @@
 #include <fstream>
 #include <iostream>
 
-GradientBoostingClassifier::GradientBoostingClassifier()
-    : n_trees(100), max_depth(3), learning_rate(0.1)
+GradientBoostingClassifier::GradientBoostingClassifier(int vectorizerid)
+    : n_trees(50), max_depth(5), learning_rate(0.01)
 {
-    CV.setBinary(false);
-    CV.setCaseSensitive(false);
-    CV.setIncludeStopWords(false);
+    switch (vectorizerid)
+    {
+        case ID_VECTORIZER_COUNT:
+            pVec = new CountVectorizer();
+            break;
+
+        case ID_VECTORIZER_TFIDF:
+            pVec = new TfidfVectorizer();
+            break;
+
+        default:
+            throw runtime_error("Unknown Vectorizer!");
+    }
+
+    pVec->setBinary(false);
+    pVec->setCaseSensitive(false);
+    pVec->setIncludeStopWords(false);
 }
 
 GradientBoostingClassifier::~GradientBoostingClassifier()
 {
+    delete pVec;
 }
 
-double GradientBoostingClassifier::predict_tree(const DecisionTree& tree, const std::vector<int>& features) const
+double GradientBoostingClassifier::predict_tree(const DecisionTree& tree, const std::vector<double>& features) const
 {
     return tree.predict(features).label;
 }
 
-double GradientBoostingClassifier::predict_proba(const std::vector<int>& features) const
+double GradientBoostingClassifier::predict_proba(const std::vector<double>& features) const
 {
     double score = 0.0;
     for (size_t i = 0; i < trees.size(); ++i)
@@ -33,14 +48,14 @@ double GradientBoostingClassifier::predict_proba(const std::vector<int>& feature
 
 void GradientBoostingClassifier::fit(std::string abs_filepath_to_features, std::string abs_filepath_to_labels)
 {
-    CV.fit(abs_filepath_to_features, abs_filepath_to_labels);
+    pVec->fit(abs_filepath_to_features, abs_filepath_to_labels);
 
-    size_t num_features = CV.word_array.size();
+    size_t num_features = pVec->word_array.size();
     trees.clear();
     tree_weights.clear();
 
-    std::vector<std::shared_ptr<Sentence>> sentences = CV.sentences;
-    std::vector<int> labels(sentences.size());
+    std::vector<std::shared_ptr<Sentence>> sentences = pVec->sentences;
+    std::vector<double> labels(sentences.size());
 
     std::ifstream label_file(abs_filepath_to_labels);
     std::string label;
@@ -57,7 +72,7 @@ void GradientBoostingClassifier::fit(std::string abs_filepath_to_features, std::
         for (size_t j = 0; j < sentences.size(); ++j)
         {
             const auto& sentence_map = sentences[j]->sentence_map;
-            std::vector<int> features(num_features, 0);
+            std::vector<double> features(num_features, 0);
             for (const auto& entry : sentence_map)
             {
                 features[entry.first] = entry.second;
@@ -69,7 +84,7 @@ void GradientBoostingClassifier::fit(std::string abs_filepath_to_features, std::
         }
 
         auto tree = std::make_unique<DecisionTree>(max_depth);
-        tree->fit(CV, sentences);
+        tree->fit(sentences);
         trees.push_back(std::move(tree));
         tree_weights.push_back(learning_rate);
     }
@@ -79,8 +94,8 @@ Prediction GradientBoostingClassifier::predict(std::string sentence)
 {
     GlobalData vars;
     Prediction result;
-    std::vector<std::string> processed_input = CV.buildSentenceVector(sentence);
-    std::vector<int> feature_vector = CV.getSentenceFeatures(processed_input);
+    std::vector<std::string> processed_input = pVec->buildSentenceVector(sentence);
+    std::vector<double> feature_vector = pVec->getSentenceFeatures(processed_input);
     double probability = predict_proba(feature_vector);
 
     result.probability = probability;
@@ -134,7 +149,7 @@ void GradientBoostingClassifier::save(const std::string& filename) const
         return;
     }
 
-    CV.save(outFile);
+    pVec->save(outFile);
 
     size_t tree_count = trees.size();
     outFile.write(reinterpret_cast<const char*>(&tree_count), sizeof(tree_count));
@@ -160,7 +175,7 @@ void GradientBoostingClassifier::load(const std::string& filename)
         return;
     }
 
-    CV.load(inFile);
+    pVec->load(inFile);
 
     size_t tree_count;
     inFile.read(reinterpret_cast<char*>(&tree_count), sizeof(tree_count));

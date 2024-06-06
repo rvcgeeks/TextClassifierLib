@@ -1,10 +1,20 @@
+
 #ifndef BASECLASSIFIER_H__
 #define BASECLASSIFIER_H__
 
 #include <iostream>
+
 #include "CountVectorizer.h"
+#include "TfidfVectorizer.h"
 
 using namespace std;
+
+#define ID_CLASSIFIER_NAIVEBAYESCLASSIFIER              1
+#define ID_CLASSIFIER_LOGISTICREGRESSIONCLASSIFIER      2
+#define ID_CLASSIFIER_SVCCLASSIFIER                     3
+#define ID_CLASSIFIER_KNNCLASSIFIER                     4
+#define ID_CLASSIFIER_RANDOMFORESTCLASSIFIER            5
+#define ID_CLASSIFIER_GRADIENTBOOSTINGCLASSIFIER        6
 
 struct Prediction
 {
@@ -17,7 +27,9 @@ class BaseClassifier
 public:  // protected
     BaseClassifier();
     ~BaseClassifier();
-    CountVectorizer CV;
+    BaseVectorizer* pVec;
+    CountVectorizer countVectorizerObj;
+    TfidfVectorizer tfidfVectorizerObj;
     void shape();
     void head();
     virtual void fit(string abs_filepath_to_features, string abs_filepath_to_labels) = 0;

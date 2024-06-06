@@ -9,7 +9,7 @@
 class NaiveBayesClassifier : public BaseClassifier
 {
 public:
-    NaiveBayesClassifier();
+    NaiveBayesClassifier(int vectorizerid = ID_VECTORIZER_COUNT);
     ~NaiveBayesClassifier();
     void fit(std::string abs_filepath_to_features, std::string abs_filepath_to_labels);
     void predict(std::string abs_filepath_to_features, std::string abs_filepath_to_labels) override;
@@ -23,7 +23,7 @@ private:
     double log_prior_pos;
     double log_prior_neg;
 
-    double calculate_log_probability(const std::vector<int>& features, bool is_positive) const;
+    double calculate_log_probability(const std::vector<double>& features, bool is_positive) const;
 };
 
 #endif // NAIVEBAYESCLASSIFIER_H__

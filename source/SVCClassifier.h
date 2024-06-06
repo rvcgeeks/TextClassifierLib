@@ -8,7 +8,7 @@
 class SVCClassifier: public BaseClassifier
 {
 public:
-    SVCClassifier();
+    SVCClassifier(int vectorizerid = ID_VECTORIZER_COUNT);
     ~SVCClassifier();
     void fit(std::string abs_filepath_to_features, std::string abs_filepath_to_labels);
     void predict(string abs_filepath_to_features, string abs_filepath_to_labels) override;
@@ -22,7 +22,7 @@ private:
     int epochs;
     double learning_rate;
     double regularization_param;
-    double predict_margin(const std::vector<int>& features) const;
+    double predict_margin(const std::vector<double>& features) const;
 };
 
 #endif // LINEARSVCCLASSIFIER_H__

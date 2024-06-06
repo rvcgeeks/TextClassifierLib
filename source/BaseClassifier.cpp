@@ -11,9 +11,9 @@ BaseClassifier::~BaseClassifier()
 
 void BaseClassifier::shape()
 {
-    CV.shape();
+    pVec->shape();
 }
 void BaseClassifier::head()
 {
-    CV.head();
+    pVec->head();
 }

@@ -14,12 +14,12 @@ DecisionTree::~DecisionTree()
 {
 }
 
-void DecisionTree::fit(const CountVectorizer& CV, const std::vector<std::shared_ptr<Sentence>>& sentences)
+void DecisionTree::fit(const std::vector<std::shared_ptr<Sentence>>& sentences)
 {
     root = buildTree(sentences, 0);
 }
 
-Prediction DecisionTree::predict(const std::vector<int>& features) const
+Prediction DecisionTree::predict(const std::vector<double>& features) const
 {
     return predictNode(root, features);
 }
@@ -119,7 +119,7 @@ void DecisionTree::split(const std::vector<std::shared_ptr<Sentence>>& sentences
     }
 }
 
-Prediction DecisionTree::predictNode(const std::shared_ptr<Node>& node, const std::vector<int>& features) const
+Prediction DecisionTree::predictNode(const std::shared_ptr<Node>& node, const std::vector<double>& features) const
 {
     if (!node)
     {

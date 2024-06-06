@@ -4,18 +4,34 @@
 #include <fstream>
 #include <iostream>
 
-LogisticRegressionClassifier::LogisticRegressionClassifier()
+LogisticRegressionClassifier::LogisticRegressionClassifier(int vectorizerid)
 {
-    CV.setBinary(false);
-    CV.setCaseSensitive(false);
-    CV.setIncludeStopWords(false);
+    switch (vectorizerid)
+    {
+        case ID_VECTORIZER_COUNT:
+            pVec = new CountVectorizer();
+            break;
+
+        case ID_VECTORIZER_TFIDF:
+            pVec = new TfidfVectorizer();
+            break;
+
+        default:
+            throw runtime_error("Unknown Vectorizer!");
+    }
+
+    pVec->setBinary(false);
+    pVec->setCaseSensitive(false);
+    pVec->setIncludeStopWords(false);
+
     bias = 0.0;
-    epochs = 5;
+    epochs = 10;
     learning_rate = 0.01;
 }
 
 LogisticRegressionClassifier::~LogisticRegressionClassifier()
 {
+    delete pVec;
 }
 
 double LogisticRegressionClassifier::sigmoid(double z) const
@@ -23,7 +39,7 @@ double LogisticRegressionClassifier::sigmoid(double z) const
     return 1.0 / (1.0 + exp(-z));
 }
 
-double LogisticRegressionClassifier::predict_proba(const std::vector<int>& features) const
+double LogisticRegressionClassifier::predict_proba(const std::vector<double>& features) const
 {
     double z = bias;
     for (size_t i = 0; i < features.size(); ++i)
@@ -35,12 +51,12 @@ double LogisticRegressionClassifier::predict_proba(const std::vector<int>& featu
 
 void LogisticRegressionClassifier::fit(std::string abs_filepath_to_features, std::string abs_filepath_to_labels)
 {
-    CV.fit(abs_filepath_to_features, abs_filepath_to_labels);
+    pVec->fit(abs_filepath_to_features, abs_filepath_to_labels);
 
-    size_t num_features = CV.word_array.size();
+    size_t num_features = pVec->word_array.size();
     weights.assign(num_features, 0.0);
 
-    std::vector<std::shared_ptr<Sentence>> sentences = CV.sentences;
+    std::vector<std::shared_ptr<Sentence>> sentences = pVec->sentences;
     std::vector<int> labels(sentences.size());
 
     std::ifstream label_file(abs_filepath_to_labels);
@@ -57,7 +73,7 @@ void LogisticRegressionClassifier::fit(std::string abs_filepath_to_features, std
         for (size_t i = 0; i < sentences.size(); ++i)
         {
             const auto& sentence_map = sentences[i]->sentence_map;
-            std::vector<int> features(num_features, 0);
+            std::vector<double> features(num_features, 0);
             for (const auto& entry : sentence_map)
             {
                 features[entry.first] = entry.second;
@@ -86,8 +102,8 @@ Prediction LogisticRegressionClassifier::predict(std::string sentence)
 {
     GlobalData vars;
     Prediction result;
-    std::vector<string> processed_input = CV.buildSentenceVector(sentence);
-    std::vector<int> feature_vector = CV.getSentenceFeatures(processed_input);
+    std::vector<string> processed_input = pVec->buildSentenceVector(sentence);
+    std::vector<double> feature_vector = pVec->getSentenceFeatures(processed_input);
     double probability = predict_proba(feature_vector);
     
     result.probability = probability;
@@ -141,7 +157,7 @@ void LogisticRegressionClassifier::save(const std::string& filename) const
         return;
     }
 
-    CV.save(outFile);
+    pVec->save(outFile);
 
     size_t weight_size = weights.size();
     outFile.write(reinterpret_cast<const char*>(&weight_size), sizeof(weight_size));
@@ -160,7 +176,7 @@ void LogisticRegressionClassifier::load(const std::string& filename)
         return;
     }
 
-    CV.load(inFile);
+    pVec->load(inFile);
 
     size_t weight_size;
     inFile.read(reinterpret_cast<char*>(&weight_size), sizeof(weight_size));

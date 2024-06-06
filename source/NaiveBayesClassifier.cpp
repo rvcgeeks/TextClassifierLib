@@ -5,22 +5,37 @@
 #include <iostream>
 #include <cmath>
 
-NaiveBayesClassifier::NaiveBayesClassifier()
+NaiveBayesClassifier::NaiveBayesClassifier(int vectorizerid)
 {
-    CV.setBinary(false);
-    CV.setCaseSensitive(false);
-    CV.setIncludeStopWords(false);
+    switch (vectorizerid)
+    {
+        case ID_VECTORIZER_COUNT:
+            pVec = new CountVectorizer();
+            break;
+
+        case ID_VECTORIZER_TFIDF:
+            pVec = new TfidfVectorizer();
+            break;
+
+        default:
+            throw runtime_error("Unknown Vectorizer!");
+    }
+
+    pVec->setBinary(false);
+    pVec->setCaseSensitive(false);
+    pVec->setIncludeStopWords(false);
 }
 
 NaiveBayesClassifier::~NaiveBayesClassifier()
 {
+    delete pVec;
 }
 
 void NaiveBayesClassifier::fit(std::string abs_filepath_to_features, std::string abs_filepath_to_labels)
 {
-    CV.fit(abs_filepath_to_features, abs_filepath_to_labels);
+    pVec->fit(abs_filepath_to_features, abs_filepath_to_labels);
 
-    std::vector<std::shared_ptr<Sentence>> sentences = CV.sentences;
+    std::vector<std::shared_ptr<Sentence>> sentences = pVec->sentences;
     int num_sentences = sentences.size();
 
     int num_pos = 0;
@@ -55,15 +70,15 @@ void NaiveBayesClassifier::fit(std::string abs_filepath_to_features, std::string
     log_prior_pos = std::log(static_cast<double>(num_pos) / num_sentences);
     log_prior_neg = std::log(static_cast<double>(num_neg) / num_sentences);
 
-    for (const auto& word : CV.word_array)
+    for (const auto& word : pVec->word_array)
     {
-        int idx = CV.word_to_idx[word];
-        log_prob_pos[idx] = std::log((word_count_pos[idx] + 1.0) / (total_words_pos + CV.getWordArraySize()));
-        log_prob_neg[idx] = std::log((word_count_neg[idx] + 1.0) / (total_words_neg + CV.getWordArraySize()));
+        int idx = pVec->word_to_idx[word];
+        log_prob_pos[idx] = std::log((word_count_pos[idx] + 1.0) / (total_words_pos + pVec->getWordArraySize()));
+        log_prob_neg[idx] = std::log((word_count_neg[idx] + 1.0) / (total_words_neg + pVec->getWordArraySize()));
     }
 }
 
-double NaiveBayesClassifier::calculate_log_probability(const std::vector<int>& features, bool is_positive) const
+double NaiveBayesClassifier::calculate_log_probability(const std::vector<double>& features, bool is_positive) const
 {
     double log_prob = is_positive ? log_prior_pos : log_prior_neg;
     const auto& log_prob_map = is_positive ? log_prob_pos : log_prob_neg;
@@ -82,8 +97,8 @@ Prediction NaiveBayesClassifier::predict(std::string sentence)
 {
     GlobalData vars;
     Prediction result;
-    std::vector<std::string> processed_input = CV.buildSentenceVector(sentence);
-    std::vector<int> feature_vector = CV.getSentenceFeatures(processed_input);
+    std::vector<std::string> processed_input = pVec->buildSentenceVector(sentence);
+    std::vector<double> feature_vector = pVec->getSentenceFeatures(processed_input);
 
     double log_prob_pos = calculate_log_probability(feature_vector, true);
     double log_prob_neg = calculate_log_probability(feature_vector, false);
@@ -144,7 +159,7 @@ void NaiveBayesClassifier::save(const std::string& filename) const
         return;
     }
 
-    CV.save(outFile);
+    pVec->save(outFile);
 
     size_t size;
 
@@ -179,7 +194,7 @@ void NaiveBayesClassifier::load(const std::string& filename)
         return;
     }
 
-    CV.load(inFile);
+    pVec->load(inFile);
 
     size_t size;
 

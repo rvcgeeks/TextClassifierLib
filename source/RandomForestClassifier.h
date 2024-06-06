@@ -10,7 +10,7 @@
 class RandomForestClassifier : public BaseClassifier
 {
 public:
-    RandomForestClassifier(int num_trees = 10, int max_depth = 5);
+    RandomForestClassifier(int vectorizerid = ID_VECTORIZER_COUNT, int num_trees = 50, int max_depth = 5);
     ~RandomForestClassifier();
     
     void fit(std::string abs_filepath_to_features, std::string abs_filepath_to_labels);

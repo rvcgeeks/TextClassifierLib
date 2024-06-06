@@ -10,7 +10,7 @@
 class GradientBoostingClassifier : public BaseClassifier
 {
 public:
-    GradientBoostingClassifier();
+    GradientBoostingClassifier(int vectorizerid=ID_VECTORIZER_COUNT);
     ~GradientBoostingClassifier();
     
     void fit(std::string abs_filepath_to_features, std::string abs_filepath_to_labels) override;
@@ -26,8 +26,8 @@ private:
     int max_depth;
     double learning_rate;
 
-    double predict_tree(const DecisionTree& tree, const std::vector<int>& features) const;
-    double predict_proba(const std::vector<int>& features) const;
+    double predict_tree(const DecisionTree& tree, const std::vector<double>& features) const;
+    double predict_proba(const std::vector<double>& features) const;
 };
 
 #endif // GRADIENTBOOSTINGCLASSIFIER_H__

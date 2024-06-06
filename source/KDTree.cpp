@@ -8,11 +8,11 @@ KDTree::~KDTree()
     destroyTree(root);
 }
 
-void KDTree::build(const std::vector<std::vector<int>>& points, const std::vector<int>& labels)
+void KDTree::build(const std::vector<std::vector<double>>& points, const std::vector<int>& labels)
 {
     if (points.empty()) return;
     dimension = points[0].size();
-    std::vector<std::pair<std::vector<int>, int>> point_labels(points.size());
+    std::vector<std::pair<std::vector<double>, int>> point_labels(points.size());
     for (size_t i = 0; i < points.size(); ++i)
     {
         point_labels[i] = std::make_pair(points[i], labels[i]);
@@ -20,21 +20,21 @@ void KDTree::build(const std::vector<std::vector<int>>& points, const std::vecto
     root = buildTree(point_labels, 0);
 }
 
-KDNode* KDTree::buildTree(std::vector<std::pair<std::vector<int>, int>>& points, int depth)
+KDNode* KDTree::buildTree(std::vector<std::pair<std::vector<double>, int>>& points, int depth)
 {
     if (points.empty()) return nullptr;
 
     int axis = depth % dimension;
     size_t median = points.size() / 2;
     std::nth_element(points.begin(), points.begin() + median, points.end(),
-                     [axis](const std::pair<std::vector<int>, int>& a, const std::pair<std::vector<int>, int>& b)
+                     [axis](const std::pair<std::vector<double>, int>& a, const std::pair<std::vector<double>, int>& b)
                      {
                          return a.first[axis] < b.first[axis];
                      });
 
     KDNode* node = new KDNode(points[median].first, points[median].second);
-    std::vector<std::pair<std::vector<int>, int>> left(points.begin(), points.begin() + median);
-    std::vector<std::pair<std::vector<int>, int>> right(points.begin() + median + 1, points.end());
+    std::vector<std::pair<std::vector<double>, int>> left(points.begin(), points.begin() + median);
+    std::vector<std::pair<std::vector<double>, int>> right(points.begin() + median + 1, points.end());
     node->left = buildTree(left, depth + 1);
     node->right = buildTree(right, depth + 1);
     
@@ -49,7 +49,7 @@ void KDTree::destroyTree(KDNode* node)
     delete node;
 }
 
-int KDTree::nearestNeighbor(const std::vector<int>& point)
+int KDTree::nearestNeighbor(const std::vector<double>& point)
 {
     KDNode* best = nullptr;
     double best_dist = std::numeric_limits<double>::infinity();
@@ -57,7 +57,7 @@ int KDTree::nearestNeighbor(const std::vector<int>& point)
     return best->label;
 }
 
-void KDTree::nearest(KDNode* root, const std::vector<int>& target, KDNode*& best, double& best_dist, int depth) const
+void KDTree::nearest(KDNode* root, const std::vector<double>& target, KDNode*& best, double& best_dist, int depth) const
 {
     if (!root) return;
 
@@ -79,7 +79,7 @@ void KDTree::nearest(KDNode* root, const std::vector<int>& target, KDNode*& best
     }
 }
 
-double KDTree::calculateDistance(const std::vector<int>& a, const std::vector<int>& b) const
+double KDTree::calculateDistance(const std::vector<double>& a, const std::vector<double>& b) const
 {
     double sum = 0.0;
     for (size_t i = 0; i < a.size(); ++i)
@@ -90,7 +90,7 @@ double KDTree::calculateDistance(const std::vector<int>& a, const std::vector<in
     return std::sqrt(sum);
 }
 
-std::vector<double> KDTree::getClosestDistances(const std::vector<int>& point, int k)
+std::vector<double> KDTree::getClosestDistances(const std::vector<double>& point, int k)
 {
     // Min heap to store distances
     std::priority_queue<double> closest_distances;
@@ -108,7 +108,7 @@ std::vector<double> KDTree::getClosestDistances(const std::vector<int>& point, i
     return result;
 }
 
-void KDTree::findKNearest(KDNode* root, const std::vector<int>& target, std::priority_queue<double>& closest_distances, int k, int depth)
+void KDTree::findKNearest(KDNode* root, const std::vector<double>& target, std::priority_queue<double>& closest_distances, int k, int depth)
 {
     if (!root) return;
 

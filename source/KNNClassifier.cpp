@@ -6,23 +6,38 @@
 #include <algorithm>
 #include <cmath>
 
-KNNClassifier::KNNClassifier(int k_) : k(k_)
+KNNClassifier::KNNClassifier(int vectorizerid,int k_) : k(k_)
 {
-    CV.setBinary(false);
-    CV.setCaseSensitive(false);
-    CV.setIncludeStopWords(false);
+    switch (vectorizerid)
+    {
+        case ID_VECTORIZER_COUNT:
+            pVec = new CountVectorizer();
+            break;
+
+        case ID_VECTORIZER_TFIDF:
+            pVec = new TfidfVectorizer();
+            break;
+
+        default:
+            throw runtime_error("Unknown Vectorizer!");
+    }
+
+    pVec->setBinary(false);
+    pVec->setCaseSensitive(false);
+    pVec->setIncludeStopWords(false);
 }
 
 KNNClassifier::~KNNClassifier()
 {
+    delete pVec;
 }
 
 void KNNClassifier::fit(std::string abs_filepath_to_features, std::string abs_filepath_to_labels)
 {
-    CV.fit(abs_filepath_to_features, abs_filepath_to_labels);
+    pVec->fit(abs_filepath_to_features, abs_filepath_to_labels);
 
-    size_t num_features = CV.word_array.size();
-    std::vector<std::shared_ptr<Sentence>> sentences = CV.sentences;
+    size_t num_features = pVec->word_array.size();
+    std::vector<std::shared_ptr<Sentence>> sentences = pVec->sentences;
     training_features.clear();
     training_labels.clear();
 
@@ -31,7 +46,7 @@ void KNNClassifier::fit(std::string abs_filepath_to_features, std::string abs_fi
     for (size_t i = 0; i < sentences.size(); ++i)
     {
         const auto& sentence_map = sentences[i]->sentence_map;
-        std::vector<int> features(num_features, 0);
+        std::vector<double> features(num_features, 0);
         for (const auto& entry : sentence_map)
         {
             features[entry.first] = entry.second;
@@ -77,8 +92,8 @@ void KNNClassifier::predict(std::string abs_filepath_to_features, std::string ab
 Prediction KNNClassifier::predict(std::string sentence)
 {
     GlobalData vars;
-    std::vector<std::string> processed_input = CV.buildSentenceVector(sentence);
-    std::vector<int> feature_vector = CV.getSentenceFeatures(processed_input);
+    std::vector<std::string> processed_input = pVec->buildSentenceVector(sentence);
+    std::vector<double> feature_vector = pVec->getSentenceFeatures(processed_input);
 
     int label = kd_tree.nearestNeighbor(feature_vector);
 
@@ -94,13 +109,13 @@ Prediction KNNClassifier::predict(std::string sentence)
     return { label, probability };
 }
 
-int KNNClassifier::getLabel(const std::vector<int>& features) const
+int KNNClassifier::getLabel(const std::vector<double>& features) const
 {
     // Deprecated: getLabel is no longer needed with KDTree nearestNeighbor.
     return 0;
 }
 
-double KNNClassifier::calculateDistance(const std::vector<int>& a, const std::vector<int>& b) const
+double KNNClassifier::calculateDistance(const std::vector<double>& a, const std::vector<double>& b) const
 {
     double sum = 0.0;
     for (size_t i = 0; i < a.size(); ++i)
@@ -120,7 +135,7 @@ void KNNClassifier::save(const std::string& filename) const
         return;
     }
 
-    CV.save(outFile);
+    pVec->save(outFile);
 
     size_t training_features_size = training_features.size();
     outFile.write(reinterpret_cast<const char*>(&training_features_size), sizeof(training_features_size));
@@ -147,7 +162,7 @@ void KNNClassifier::load(const std::string& filename)
         return;
     }
 
-    CV.load(inFile);
+    pVec->load(inFile);
 
     size_t training_features_size;
     inFile.read(reinterpret_cast<char*>(&training_features_size), sizeof(training_features_size));

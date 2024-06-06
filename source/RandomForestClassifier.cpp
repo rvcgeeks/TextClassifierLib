@@ -5,27 +5,42 @@
 #include <iostream>
 #include <algorithm>
 
-RandomForestClassifier::RandomForestClassifier(int num_trees, int max_depth)
+RandomForestClassifier::RandomForestClassifier(int vectorizerid, int num_trees, int max_depth)
     : num_trees(num_trees), max_depth(max_depth)
 {
-    CV.setBinary(false);
-    CV.setCaseSensitive(false);
-    CV.setIncludeStopWords(false);
+    switch (vectorizerid)
+    {
+        case ID_VECTORIZER_COUNT:
+            pVec = new CountVectorizer();
+            break;
+
+        case ID_VECTORIZER_TFIDF:
+            pVec = new TfidfVectorizer();
+            break;
+
+        default:
+            throw runtime_error("Unknown Vectorizer!");
+    }
+
+    pVec->setBinary(false);
+    pVec->setCaseSensitive(false);
+    pVec->setIncludeStopWords(false);
 }
 
 RandomForestClassifier::~RandomForestClassifier()
 {
+    delete pVec;
 }
 
 void RandomForestClassifier::fit(std::string abs_filepath_to_features, std::string abs_filepath_to_labels)
 {
-    CV.fit(abs_filepath_to_features, abs_filepath_to_labels);
-    std::vector<std::shared_ptr<Sentence>> sentences = CV.sentences;
+    pVec->fit(abs_filepath_to_features, abs_filepath_to_labels);
+    std::vector<std::shared_ptr<Sentence>> sentences = pVec->sentences;
     
     for (int i = 0; i < num_trees; ++i)
     {
         auto tree = std::make_shared<DecisionTree>(max_depth);
-        tree->fit(CV, sentences);
+        tree->fit(sentences);
         trees.push_back(tree);
     }
 }
@@ -35,8 +50,8 @@ Prediction RandomForestClassifier::predict(std::string sentence)
     GlobalData vars;
     Prediction result;
 
-    std::vector<std::string> processed_input = CV.buildSentenceVector(sentence);
-    std::vector<int> feature_vector = CV.getSentenceFeatures(processed_input);
+    std::vector<std::string> processed_input = pVec->buildSentenceVector(sentence);
+    std::vector<double> feature_vector = pVec->getSentenceFeatures(processed_input);
 
     std::vector<int> votes(3, 0); // Assuming 3 classes: POS, NEG, NEU
     for (const auto& tree : trees)
@@ -110,7 +125,7 @@ void RandomForestClassifier::save(const std::string& filename) const
         return;
     }
 
-    CV.save(outFile);
+    pVec->save(outFile);
 
     size_t num_trees = trees.size();
     outFile.write(reinterpret_cast<const char*>(&num_trees), sizeof(num_trees));
@@ -131,7 +146,7 @@ void RandomForestClassifier::load(const std::string& filename)
         return;
     }
 
-    CV.load(inFile);
+    pVec->load(inFile);
 
     size_t num_trees;
     inFile.read(reinterpret_cast<char*>(&num_trees), sizeof(num_trees));
