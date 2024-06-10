@@ -6,30 +6,36 @@
 #include <algorithm>
 #include <cmath>
 
-KNNClassifier::KNNClassifier(int vectorizerid,int k_) : k(k_)
+KNNClassifier::KNNClassifier(BaseVectorizer* pvec)
 {
-    switch (vectorizerid)
-    {
-        case ID_VECTORIZER_COUNT:
-            pVec = new CountVectorizer();
-            break;
-
-        case ID_VECTORIZER_TFIDF:
-            pVec = new TfidfVectorizer();
-            break;
-
-        default:
-            throw runtime_error("Unknown Vectorizer!");
-    }
-
-    pVec->setBinary(false);
-    pVec->setCaseSensitive(false);
-    pVec->setIncludeStopWords(false);
+    pVec = pvec;
 }
 
 KNNClassifier::~KNNClassifier()
 {
     delete pVec;
+}
+
+void KNNClassifier::setHyperparameters(std::string hyperparameters)
+{
+    std::string token;
+    std::istringstream tokenStream(hyperparameters);
+
+    // "k=3"
+    k = 3;
+
+    while (std::getline(tokenStream, token, ',')) {
+        std::istringstream pairStream(token);
+        std::string key;
+        double value;
+
+        if (std::getline(pairStream, key, '=') && pairStream >> value) {
+            cout << key << " = " << value << endl;
+            if (key == "k") {
+                k = value;
+            }
+        }
+    }
 }
 
 void KNNClassifier::fit(std::string abs_filepath_to_features, std::string abs_filepath_to_labels)

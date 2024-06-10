@@ -4,26 +4,9 @@
 #include <fstream>
 #include <iostream>
 
-GradientBoostingClassifier::GradientBoostingClassifier(int vectorizerid)
-    : n_trees(50), max_depth(5), learning_rate(0.01)
+GradientBoostingClassifier::GradientBoostingClassifier(BaseVectorizer* pvec)
 {
-    switch (vectorizerid)
-    {
-        case ID_VECTORIZER_COUNT:
-            pVec = new CountVectorizer();
-            break;
-
-        case ID_VECTORIZER_TFIDF:
-            pVec = new TfidfVectorizer();
-            break;
-
-        default:
-            throw runtime_error("Unknown Vectorizer!");
-    }
-
-    pVec->setBinary(false);
-    pVec->setCaseSensitive(false);
-    pVec->setIncludeStopWords(false);
+	pVec = pvec;
 }
 
 GradientBoostingClassifier::~GradientBoostingClassifier()
@@ -41,9 +24,48 @@ double GradientBoostingClassifier::predict_proba(const std::vector<double>& feat
     double score = 0.0;
     for (size_t i = 0; i < trees.size(); ++i)
     {
-        score += learning_rate * predict_tree(*trees[i], features);
+        double tree_prediction = predict_tree(*trees[i], features);
+        score += learning_rate * (tree_prediction - l1_regularization_param * std::abs(tree_prediction) - l2_regularization_param * (tree_prediction * tree_prediction));
     }
     return 1.0 / (1.0 + exp(-score));
+}
+
+void GradientBoostingClassifier::setHyperparameters(std::string hyperparameters)
+{
+    std::string token;
+    std::istringstream tokenStream(hyperparameters);
+
+    // "n_trees=50,max_depth=5,learning_rate=0.01,l1_regularization_param=0.005,l2_regularization_param=0.0"
+    n_trees = 50;
+    max_depth = 5;
+    learning_rate = 0.01;
+    l1_regularization_param = 0.005;
+    l2_regularization_param = 0.0;
+
+    while (std::getline(tokenStream, token, ',')) {
+        std::istringstream pairStream(token);
+        std::string key;
+        double value;
+
+        if (std::getline(pairStream, key, '=') && pairStream >> value) {
+            cout << key << " = " << value << endl;
+            if (key == "n_trees") {
+                n_trees = value;
+            }
+            else if (key == "max_depth") {
+                max_depth = value;
+            }
+            else if (key == "learning_rate") {
+                learning_rate = value;
+            }
+            else if (key == "l1_regularization_param") {
+                l1_regularization_param = value;
+            }
+            else if (key == "l2_regularization_param") {
+                l2_regularization_param = value;
+            }
+        }
+    }
 }
 
 void GradientBoostingClassifier::fit(std::string abs_filepath_to_features, std::string abs_filepath_to_labels)

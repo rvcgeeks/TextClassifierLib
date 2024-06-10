@@ -1,12 +1,17 @@
+/**
+ * @file CountVectorizer.cpp
+ * @brief Implementation of the CountVectorizer class.
+ */
 
 #include "CountVectorizer.h"
 
 using namespace std;
 
-// ================================================================|
-// ======================CONSTRUCTORS==============================|
-// ================================================================|
-
+/**
+ * @brief Default constructor.
+ *
+ * Defaults to binary=true, case_sensitive=true, and include_stopwords=true.
+ */
 CountVectorizer::CountVectorizer()
 {
     binary = true;
@@ -14,6 +19,13 @@ CountVectorizer::CountVectorizer()
     include_stopwords = true;
 }
 
+/**
+ * @brief Constructor with options.
+ *
+ * @param binary_ Boolean flag indicating if binary vectors are used.
+ * @param case_sensitive_ Boolean flag indicating if case sensitivity is considered.
+ * @param include_stopwords_ Boolean flag indicating if stop words are included.
+ */
 CountVectorizer::CountVectorizer(bool binary_, bool case_sensitive_, bool include_stopwords_)
 {
     binary = binary_;
@@ -21,15 +33,19 @@ CountVectorizer::CountVectorizer(bool binary_, bool case_sensitive_, bool includ
     include_stopwords = include_stopwords_;
 }
 
+/**
+ * @brief Destructor.
+ */
 CountVectorizer::~CountVectorizer()
 {
 }
 
-// ===============================================================|
-// ======================USER INTERFACE FUNCTIONS=================|
-// ===============================================================|
-
-
+/**
+ * @brief Fit the vectorizer on the given dataset.
+ *
+ * @param abs_filepath_to_features Absolute file path to the features file.
+ * @param abs_filepath_to_labels Absolute file path to the labels file.
+ */
 void CountVectorizer::fit(string abs_filepath_to_features, string abs_filepath_to_labels)
 {
     ifstream in;
@@ -73,7 +89,7 @@ void CountVectorizer::fit(string abs_filepath_to_features, string abs_filepath_t
         return;
     }
 
-    cout << "fitting CountVectorizer..." << endl;
+    cout << "Fitting CountVectorizer..." << endl;
     int perc, prevperc;
 
     for (unsigned int i = 0; i < feature_size; i++)
@@ -90,6 +106,9 @@ void CountVectorizer::fit(string abs_filepath_to_features, string abs_filepath_t
     cout << endl;
 }
 
+/**
+ * @brief Print the dimensions of the CountVectorizer object.
+ */
 void CountVectorizer::shape()
 {
     unsigned int wordArraySize = getWordArraySize();
@@ -101,6 +120,9 @@ void CountVectorizer::shape()
     cout << "------------------------------" << endl;
 }
 
+/**
+ * @brief Print a dictionary-like representation of the CountVectorizer object (first 10).
+ */
 void CountVectorizer::head()
 {
     int count = 0;
@@ -130,12 +152,23 @@ void CountVectorizer::head()
 // ======================HELPERS==============================|
 // ===========================================================|
 
-
+/**
+ * @brief Check if a word is in the sentence.
+ *
+ * @param sentence_ The sentence to check.
+ * @param idx The index of the word to check.
+ * @return Integer casted boolean indicating presence of the word.
+ */
 int CountVectorizer::is_wordInSentence(Sentence sentence_, unsigned int idx)
 {
     return sentence_.sentence_map.count(idx) ? 1 : 0;
 }
 
+/**
+ * @brief Update the word array with newly discovered words from a sentence.
+ *
+ * @param new_sentence_vector The sentence vector containing new words.
+ */
 void CountVectorizer::pushSentenceToWordArray(vector<string> new_sentence_vector)
 {
     for (const string& word : new_sentence_vector)
@@ -148,6 +181,13 @@ void CountVectorizer::pushSentenceToWordArray(vector<string> new_sentence_vector
     }
 }
 
+/**
+ * @brief Create a Sentence object from a vector of words.
+ *
+ * @param new_sentence_vector The vector of words forming the sentence.
+ * @param label_ Boolean label for the sentence.
+ * @return Shared pointer to the created Sentence object.
+ */
 shared_ptr<Sentence> CountVectorizer::createSentenceObject(vector<string> new_sentence_vector, bool label_)
 {
     shared_ptr<Sentence> new_sentence(new Sentence);
@@ -174,6 +214,12 @@ shared_ptr<Sentence> CountVectorizer::createSentenceObject(vector<string> new_se
     return new_sentence;
 }
 
+/**
+ * @brief Add a sentence to the CountVectorizer.
+ *
+ * @param new_sentence The new sentence to add.
+ * @param label_ Boolean label for the sentence.
+ */
 void CountVectorizer::addSentence(string new_sentence, bool label_)
 {
     vector<string> processedString;
@@ -183,11 +229,23 @@ void CountVectorizer::addSentence(string new_sentence, bool label_)
     sentences.push_back(sentObj);
 }
 
+/**
+ * @brief Check if the CountVectorizer already contains the word.
+ *
+ * @param word_to_check The word to check.
+ * @return Boolean indicating if the word is present.
+ */
 bool CountVectorizer::ContainsWord(const string& word_to_check)
 {
     return word_to_idx.count(word_to_check) > 0;
 }
 
+/**
+ * @brief Split a sentence into a vector of words.
+ *
+ * @param sentence_ The sentence to split.
+ * @return Vector of words.
+ */
 vector<string> CountVectorizer::buildSentenceVector(string sentence_)
 {
     GlobalData vars;
@@ -241,6 +299,12 @@ vector<string> CountVectorizer::buildSentenceVector(string sentence_)
     return fixed_ret;
 }
 
+/**
+ * @brief Get the feature vector for a given sentence.
+ *
+ * @param sentence_words The words of the sentence.
+ * @return Vector of feature values.
+ */
 std::vector<double> CountVectorizer::getSentenceFeatures(std::vector<std::string> sentence_words) const
 {
     std::vector<double> sentence_features(word_array.size(), 0.0);
@@ -255,6 +319,11 @@ std::vector<double> CountVectorizer::getSentenceFeatures(std::vector<std::string
     return sentence_features;
 }
 
+/**
+ * @brief Save the CountVectorizer model to a file.
+ *
+ * @param outFile Output file stream to save the model.
+ */
 void CountVectorizer::save(std::ofstream& outFile) const
 {
     size_t word_array_size = word_array.size();
@@ -285,6 +354,11 @@ void CountVectorizer::save(std::ofstream& outFile) const
     outFile.write(reinterpret_cast<const char*>(&include_stopwords), sizeof(include_stopwords));
 }
 
+/**
+ * @brief Load the CountVectorizer model from a file.
+ *
+ * @param inFile Input file stream to load the model.
+ */
 void CountVectorizer::load(std::ifstream& inFile)
 {
     word_array.clear();

@@ -4,29 +4,9 @@
 #include <fstream>
 #include <iostream>
 
-LogisticRegressionClassifier::LogisticRegressionClassifier(int vectorizerid)
+LogisticRegressionClassifier::LogisticRegressionClassifier(BaseVectorizer* pvec)
 {
-    switch (vectorizerid)
-    {
-        case ID_VECTORIZER_COUNT:
-            pVec = new CountVectorizer();
-            break;
-
-        case ID_VECTORIZER_TFIDF:
-            pVec = new TfidfVectorizer();
-            break;
-
-        default:
-            throw runtime_error("Unknown Vectorizer!");
-    }
-
-    pVec->setBinary(false);
-    pVec->setCaseSensitive(false);
-    pVec->setIncludeStopWords(false);
-
-    bias = 0.0;
-    epochs = 10;
-    learning_rate = 0.01;
+    pVec = pvec;
 }
 
 LogisticRegressionClassifier::~LogisticRegressionClassifier()
@@ -34,19 +14,64 @@ LogisticRegressionClassifier::~LogisticRegressionClassifier()
     delete pVec;
 }
 
-double LogisticRegressionClassifier::sigmoid(double z) const
-{
-    return 1.0 / (1.0 + exp(-z));
-}
-
 double LogisticRegressionClassifier::predict_proba(const std::vector<double>& features) const
 {
     double z = bias;
-    for (size_t i = 0; i < features.size(); ++i)
-    {
+    for (size_t i = 0; i < features.size(); ++i) {
         z += weights[i] * features[i];
     }
-    return sigmoid(z);
+
+    double l1_penalty = 0.0;
+    for (size_t i = 0; i < weights.size(); ++i) {
+        l1_penalty += std::abs(weights[i]);
+    }
+
+    double l2_penalty = 0.0;
+    for (size_t i = 0; i < weights.size(); ++i) {
+        l2_penalty += weights[i] * weights[i];
+    }
+
+    z -= l1_regularization_param * l1_penalty + l2_regularization_param * l2_penalty;
+
+    return 1.0 / (1.0 + exp(-z));
+}
+
+void LogisticRegressionClassifier::setHyperparameters(std::string hyperparameters)
+{
+    std::string token;
+    std::istringstream tokenStream(hyperparameters);
+
+    // "bias=0.0,epochs=10,learning_rate=0.01,l1_regularization_param=0.005,l2_regularization_param=0.0"
+    bias = 0.0;
+    epochs = 10;
+    learning_rate = 0.01;
+    l1_regularization_param = 0.005;
+    l2_regularization_param = 0.0;
+
+    while (std::getline(tokenStream, token, ',')) {
+        std::istringstream pairStream(token);
+        std::string key;
+        double value;
+
+        if (std::getline(pairStream, key, '=') && pairStream >> value) {
+            cout << key << " = " << value << endl;
+            if (key == "bias") {
+                bias = value;
+            }
+            else if (key == "epochs") {
+                epochs = value;
+            }
+            else if (key == "learning_rate") {
+                learning_rate = value;
+            }
+            else if (key == "l1_regularization_param") {
+                l1_regularization_param = value;
+            }
+            else if (key == "l2_regularization_param") {
+                l2_regularization_param = value;
+            }
+        }
+    }
 }
 
 void LogisticRegressionClassifier::fit(std::string abs_filepath_to_features, std::string abs_filepath_to_labels)

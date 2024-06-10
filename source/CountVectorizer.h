@@ -1,3 +1,8 @@
+/**
+ * @file CountVectorizer.h
+ * @brief Header file for the CountVectorizer class.
+ */
+
 #ifndef COUNTERVECTORIZER_H__
 #define COUNTERVECTORIZER_H__
 
@@ -13,64 +18,141 @@
 #include "GlobalData.h"
 #include "BaseVectorizer.h"
 
+/**
+ * @class CountVectorizer
+ * @brief Converts a collection of text documents to a matrix of token counts.
+ *
+ * This class provides functionality to convert text documents into vectors
+ * of token counts, where each token is a feature. It can be configured to
+ * consider case sensitivity and stop words.
+ *
+ * The formula used for count vectorization is:
+ * \f[
+ * \text{count}(w, d) = \sum_{t \in d} \delta(w, t)
+ * \f]
+ * where \(\delta(w, t)\) is 1 if \(w = t\) and 0 otherwise.
+ *
+ * CountVectorizer can be useful in scenarios where the frequency of words
+ * in a document is an important feature for classification tasks.
+ */
 class CountVectorizer : public BaseVectorizer
 {
 public:
-	// ======================CONSTRUCTORS==============================|
+    // ======================CONSTRUCTORS==============================|
 
-	// Default constructor has two options, one which takes no params,
-	// which defaults to case_sensitive=true and include_stopwords=true:
-	CountVectorizer();
+    /**
+     * @brief Default constructor.
+     *
+     * Defaults to case_sensitive=true and include_stopwords=true.
+     */
+    CountVectorizer();
 
-	// And another which allows the user to choose their options:
-	CountVectorizer(bool binary_, bool case_sensitive_, bool include_stopwords_);
+    /**
+     * @brief Constructor with options.
+     *
+     * @param binary_ Boolean flag indicating if binary vectors are used.
+     * @param case_sensitive_ Boolean flag indicating if case sensitivity is considered.
+     * @param include_stopwords_ Boolean flag indicating if stop words are included.
+     */
+    CountVectorizer(bool binary_, bool case_sensitive_, bool include_stopwords_);
 
-	// Destructor:
-	~CountVectorizer();
+    /**
+     * @brief Destructor.
+     */
+    ~CountVectorizer();
 
-	// ======================USER INTERFACE FUNCTIONS==================|
+    // ======================USER INTERFACE FUNCTIONS==================|
 
-	// Fit will add additional (labeled) data to a CV object.  User must
-	// provide an absolute filepath to the features and an absolute file-
-	// path to the labels:
-	void fit(string abs_filepath_to_features, string abs_filepath_to_labels) override;
+    /**
+     * @brief Fit the vectorizer on the given dataset.
+     *
+     * @param abs_filepath_to_features Absolute file path to the features file.
+     * @param abs_filepath_to_labels Absolute file path to the labels file.
+     */
+    void fit(string abs_filepath_to_features, string abs_filepath_to_labels) override;
 
-	// Prints the dimensions of the CV object:
-	void shape() override;
+    /**
+     * @brief Print the dimensions of the CountVectorizer object.
+     */
+    void shape() override;
 
-	// Prints a dictionary-like representation of the CV object (first 10):
-	void head() override;
+    /**
+     * @brief Print a dictionary-like representation of the CountVectorizer object (first 10).
+     */
+    void head() override;
 
-	// ======================HELPERS===================================|
+    // ======================HELPERS===================================|
 
-	// Checks if a word is in the sentence.  Returns an integer casted bool:
-	int is_wordInSentence(Sentence sentence_, unsigned int idx);
+    /**
+     * @brief Check if a word is in the sentence.
+     *
+     * @param sentence_ The sentence to check.
+     * @param idx The index of the word to check.
+     * @return Integer casted boolean indicating presence of the word.
+     */
+    int is_wordInSentence(Sentence sentence_, unsigned int idx);
 
-	// Given a sentence, pushSentenceToWordArray will update the CV's word_array
-	// to incorporate newly discovered words:
-	void pushSentenceToWordArray(vector<string> new_sentence_vector);
+    /**
+     * @brief Update the word array with newly discovered words from a sentence.
+     *
+     * @param new_sentence_vector The sentence vector containing new words.
+     */
+    void pushSentenceToWordArray(vector<string> new_sentence_vector);
 
-	// Given a sentence, return a fully constructed sentence object:
-	shared_ptr<Sentence> createSentenceObject(vector<string> new_sentence_vector, bool label_);
+    /**
+     * @brief Create a Sentence object from a vector of words.
+     *
+     * @param new_sentence_vector The vector of words forming the sentence.
+     * @param label_ Boolean label for the sentence.
+     * @return Shared pointer to the created Sentence object.
+     */
+    shared_ptr<Sentence> createSentenceObject(vector<string> new_sentence_vector, bool label_);
 
-	// Given a sentence, add the sentence to the CountVectorizer.  Combines
-	// buildSentenceVector, pushSentenceToWordArray, and createSentenceObject
-	// to accomplish this task:
-	void addSentence(string new_sentence, bool label_) override;
+    /**
+     * @brief Add a sentence to the CountVectorizer.
+     *
+     * @param new_sentence The new sentence to add.
+     * @param label_ Boolean label for the sentence.
+     */
+    void addSentence(string new_sentence, bool label_) override;
 
-	// Checks if the CV object already contains the word.
-	bool ContainsWord(const string& word_to_check) override;
+    /**
+     * @brief Check if the CountVectorizer already contains the word.
+     *
+     * @param word_to_check The word to check.
+     * @return Boolean indicating if the word is present.
+     */
+    bool ContainsWord(const string& word_to_check) override;
 
-	// Given a sentence, split the sentence into a vector of words.
-	// Punctuation should be its own element.
-	vector<string> buildSentenceVector(string sentence_) override;
+    /**
+     * @brief Split a sentence into a vector of words.
+     *
+     * @param sentence_ The sentence to split.
+     * @return Vector of words.
+     */
+    vector<string> buildSentenceVector(string sentence_) override;
 
-	// Private attribute setter functions:
-	std::vector<double> getSentenceFeatures(std::vector<std::string> sentence_words) const override;
+    /**
+     * @brief Get the feature vector for a given sentence.
+     *
+     * @param sentence_words The words of the sentence.
+     * @return Vector of feature values.
+     */
+    std::vector<double> getSentenceFeatures(std::vector<std::string> sentence_words) const override;
 
-	// Functions to load and save model
-	void save(std::ofstream& outFile) const override;
-	void load(std::ifstream& inFile) override;
+    /**
+     * @brief Save the CountVectorizer model to a file.
+     *
+     * @param outFile Output file stream to save the model.
+     */
+    void save(std::ofstream& outFile) const override;
+
+    /**
+     * @brief Load the CountVectorizer model from a file.
+     *
+     * @param inFile Input file stream to load the model.
+     */
+    void load(std::ifstream& inFile) override;
 };
 
 #endif // COUNTERVECTORIZER_H__

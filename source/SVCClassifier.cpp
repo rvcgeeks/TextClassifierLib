@@ -5,30 +5,9 @@
 #include <iostream>
 #include "GlobalData.h"
 
-SVCClassifier::SVCClassifier(int vectorizerid)
+SVCClassifier::SVCClassifier(BaseVectorizer* pvec)
 {
-    switch (vectorizerid)
-    {
-        case ID_VECTORIZER_COUNT:
-            pVec = new CountVectorizer();
-            break;
-
-        case ID_VECTORIZER_TFIDF:
-            pVec = new TfidfVectorizer();
-            break;
-
-        default:
-            throw runtime_error("Unknown Vectorizer!");
-    }
-
-    pVec->setBinary(false);
-    pVec->setCaseSensitive(false);
-    pVec->setIncludeStopWords(false);
-
-    bias = 0.0;
-    epochs = 10;
-    learning_rate = 0.01;
-    regularization_param = 0.005;
+    pVec = pvec;
 }
 
 SVCClassifier::~SVCClassifier()
@@ -44,6 +23,44 @@ double SVCClassifier::predict_margin(const std::vector<double>& features) const
         margin += weights[i] * features[i];
     }
     return margin;
+}
+
+void SVCClassifier::setHyperparameters(std::string hyperparameters)
+{
+    std::string token;
+    std::istringstream tokenStream(hyperparameters);
+
+    // "bias=0.0,epochs=10,learning_rate=0.01,l1_regularization_param=0.005,l2_regularization_param=0.0"
+    bias = 0.0;
+    epochs = 10;
+    learning_rate = 0.01;
+    l1_regularization_param = 0.005;
+    l2_regularization_param = 0.0;
+
+    while (std::getline(tokenStream, token, ',')) {
+        std::istringstream pairStream(token);
+        std::string key;
+        double value;
+
+        if (std::getline(pairStream, key, '=') && pairStream >> value) {
+            cout << key << " = " << value << endl;
+            if (key == "bias") {
+                bias = value;
+            }
+            else if (key == "epochs") {
+                epochs = value;
+            }
+            else if (key == "learning_rate") {
+                learning_rate = value;
+            }
+            else if (key == "l1_regularization_param") {
+                l1_regularization_param = value;
+            }
+            else if (key == "l2_regularization_param") {
+                l2_regularization_param = value;
+            }
+        }
+    }
 }
 
 void SVCClassifier::fit(std::string abs_filepath_to_features, std::string abs_filepath_to_labels)
@@ -84,7 +101,7 @@ void SVCClassifier::fit(std::string abs_filepath_to_features, std::string abs_fi
             {
                 for (size_t j = 0; j < features.size(); ++j)
                 {
-                    weights[j] += learning_rate * (y_true * features[j] - 2 * regularization_param * weights[j]);
+                    weights[j] += learning_rate * (y_true * features[j] - 2 * l1_regularization_param * weights[j] - 2 * l2_regularization_param * weights[j] * weights[j]);
                 }
                 bias += learning_rate * y_true;
             }
@@ -92,7 +109,7 @@ void SVCClassifier::fit(std::string abs_filepath_to_features, std::string abs_fi
             {
                 for (size_t j = 0; j < features.size(); ++j)
                 {
-                    weights[j] += learning_rate * (-2 * regularization_param * weights[j]);
+                    weights[j] += learning_rate * (-2 * l1_regularization_param * weights[j] - 2 * l2_regularization_param * weights[j] * weights[j]);
                 }
             }
         }

@@ -5,31 +5,41 @@
 #include <iostream>
 #include <algorithm>
 
-RandomForestClassifier::RandomForestClassifier(int vectorizerid, int num_trees, int max_depth)
+RandomForestClassifier::RandomForestClassifier(BaseVectorizer* pvec)
     : num_trees(num_trees), max_depth(max_depth)
 {
-    switch (vectorizerid)
-    {
-        case ID_VECTORIZER_COUNT:
-            pVec = new CountVectorizer();
-            break;
-
-        case ID_VECTORIZER_TFIDF:
-            pVec = new TfidfVectorizer();
-            break;
-
-        default:
-            throw runtime_error("Unknown Vectorizer!");
-    }
-
-    pVec->setBinary(false);
-    pVec->setCaseSensitive(false);
-    pVec->setIncludeStopWords(false);
+    pVec = pvec;
 }
 
 RandomForestClassifier::~RandomForestClassifier()
 {
     delete pVec;
+}
+
+void RandomForestClassifier::setHyperparameters(std::string hyperparameters)
+{
+    std::string token;
+    std::istringstream tokenStream(hyperparameters);
+
+    // "num_trees=50,max_depth=5"
+    num_trees = 50;
+    max_depth = 5;
+
+    while (std::getline(tokenStream, token, ',')) {
+        std::istringstream pairStream(token);
+        std::string key;
+        double value;
+
+        if (std::getline(pairStream, key, '=') && pairStream >> value) {
+            cout << key << " = " << value << endl;
+            if (key == "num_trees") {
+                num_trees = value;
+            }
+            else if (key == "max_depth") {
+                max_depth = value;
+            }
+        }
+    }
 }
 
 void RandomForestClassifier::fit(std::string abs_filepath_to_features, std::string abs_filepath_to_labels)

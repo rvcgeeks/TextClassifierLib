@@ -19,3 +19,15 @@ mkdir build && cd build
 cmake ..
 cmake --build . --config Release
 ```
+
+Generate Docs:
+windows Mingw64:
+```
+pacman -S doxygen mingw-w64-x86_64-graphviz
+doxygen
+```
+Linux
+```
+sudo apt-get install doxygen graphviz
+doxygen
+```

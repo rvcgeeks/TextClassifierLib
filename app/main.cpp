@@ -1,25 +1,21 @@
 
 #include <iostream>
 
-#include "../source/NaiveBayesClassifier.h"
-#include "../source/LogisticRegressionClassifier.h"
-#include "../source/SVCClassifier.h"
-#include "../source/KNNClassifier.h"
-#include "../source/RandomForestClassifier.h"
-#include "../source/GradientBoostingClassifier.h"
+#include "../source/TextClassifierFactory.h"
 
 using namespace std;
 
 int main(int argc, char **argv)
 {
-	int vectorizerid;
+	int vectorizer_id, classifier_id;
 
-	BaseClassifier* pclsfr;
+	TextClassifierFactory clsfrFactoryObj;
+	TextClassifierFactory::Product pclsfr;
 
 	if (argc < 6)
 	{
 		cout << "Usage: " << endl
-			 << "  " << argv[0] << " f (vectorizer id) (classifier id) my_model.bin features.txt labels.txt" << endl
+			 << "  " << argv[0] << " f (vectorizer id) (classifier id) my_model.bin features.txt labels.txt \"hyperparam1=val1,hyperparam2=val2,...\"" << endl
 			 << "  " << argv[0] << " p (vectorizer id) (classifier id) my_model.bin features.txt labels_pred.txt" << endl
 		     << "  " << argv[0] << " 1 (vectorizer id) (classifier id) my_model.bin \"This is string to classify\" " << endl
 			 << "\nwhere vectorizer id = " << endl
@@ -28,56 +24,23 @@ int main(int argc, char **argv)
 			 << "  1 NaiveBayesClassifier\n  2 LogisticRegressionClassifier\n  3 SVCClassifier\n  4 KNNClassifier\n  5 RandomForestClassifier\n  6 GradientBoostingClassifier" << endl;
 		return 1;
 	}
+
+	vectorizer_id = atoi(argv[2]);
+	classifier_id = atoi(argv[3]);
 	
-	switch (atoi(argv[2]))
+	pclsfr = clsfrFactoryObj.getTextClassifier(vectorizer_id, classifier_id);
+	if(nullptr == pclsfr)
 	{
-		case ID_VECTORIZER_COUNT:
-			vectorizerid = ID_VECTORIZER_COUNT;
-			break;
-
-		case ID_VECTORIZER_TFIDF:
-			vectorizerid = ID_VECTORIZER_TFIDF;
-			break;
-
-		default:
-			cerr << "Invalid Vectorizer!" << endl;
-			return 1;
-	}
-
-	switch (atoi(argv[3])) 
-	{
-		case ID_CLASSIFIER_NAIVEBAYESCLASSIFIER:
-			pclsfr = new NaiveBayesClassifier(vectorizerid);
-			break;
-
-		case ID_CLASSIFIER_LOGISTICREGRESSIONCLASSIFIER:
-			pclsfr = new LogisticRegressionClassifier(vectorizerid);
-			break;
-
-		case ID_CLASSIFIER_SVCCLASSIFIER:
-			pclsfr = new SVCClassifier(vectorizerid);
-			break;
-
-		case ID_CLASSIFIER_KNNCLASSIFIER:
-			pclsfr = new KNNClassifier(vectorizerid);
-			break;
-
-		case ID_CLASSIFIER_RANDOMFORESTCLASSIFIER:
-			pclsfr = new RandomForestClassifier(vectorizerid);
-			break;
-
-		case ID_CLASSIFIER_GRADIENTBOOSTINGCLASSIFIER:
-			pclsfr = new GradientBoostingClassifier(vectorizerid);
-			break;
-
-		default:
-			cerr << "Invalid Classifier!" << endl;
-			return 1;
+		cerr << "Invalid vectorizer id or classifier id!" << endl;
+		return 1;
 	}
 	
 	// txtclsfr f 2 my_model.bin features.txt labels.txt
 	if(argv[1][0] == 'f') {
 		cout << "Training\n";
+		if (argc == 8) {
+			pclsfr->setHyperparameters(string(argv[7]));
+		}
 		pclsfr->fit(argv[5], argv[6]);
 		pclsfr->shape();
 		pclsfr->save(argv[4]);
@@ -98,8 +61,6 @@ int main(int argc, char **argv)
 		result = pclsfr->predict(argv[5]);
 		cout << result.label << "    "<< result.probability << endl;
 	}
-
-	delete pclsfr;
 
 	cout << "Done\n";
     return 0;

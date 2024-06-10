@@ -5,30 +5,36 @@
 #include <iostream>
 #include <cmath>
 
-NaiveBayesClassifier::NaiveBayesClassifier(int vectorizerid)
+NaiveBayesClassifier::NaiveBayesClassifier(BaseVectorizer* pvec)
 {
-    switch (vectorizerid)
-    {
-        case ID_VECTORIZER_COUNT:
-            pVec = new CountVectorizer();
-            break;
-
-        case ID_VECTORIZER_TFIDF:
-            pVec = new TfidfVectorizer();
-            break;
-
-        default:
-            throw runtime_error("Unknown Vectorizer!");
-    }
-
-    pVec->setBinary(false);
-    pVec->setCaseSensitive(false);
-    pVec->setIncludeStopWords(false);
+    pVec = pvec;
 }
 
 NaiveBayesClassifier::~NaiveBayesClassifier()
 {
     delete pVec;
+}
+
+void NaiveBayesClassifier::setHyperparameters(std::string hyperparameters)
+{
+    std::string token;
+    std::istringstream tokenStream(hyperparameters);
+
+    // "alpha=1.0"
+    alpha = 1.0;
+
+    while (std::getline(tokenStream, token, ',')) {
+        std::istringstream pairStream(token);
+        std::string key;
+        double value;
+
+        if (std::getline(pairStream, key, '=') && pairStream >> value) {
+            cout << key << " = " << value << endl;
+            if (key == "alpha") {
+                alpha = value;
+            }
+        }
+    }
 }
 
 void NaiveBayesClassifier::fit(std::string abs_filepath_to_features, std::string abs_filepath_to_labels)
@@ -73,8 +79,8 @@ void NaiveBayesClassifier::fit(std::string abs_filepath_to_features, std::string
     for (const auto& word : pVec->word_array)
     {
         int idx = pVec->word_to_idx[word];
-        log_prob_pos[idx] = std::log((word_count_pos[idx] + 1.0) / (total_words_pos + pVec->getWordArraySize()));
-        log_prob_neg[idx] = std::log((word_count_neg[idx] + 1.0) / (total_words_neg + pVec->getWordArraySize()));
+        log_prob_pos[idx] = std::log((word_count_pos[idx] + alpha) / (total_words_pos + alpha * pVec->getWordArraySize()));
+        log_prob_neg[idx] = std::log((word_count_neg[idx] + alpha) / (total_words_neg + alpha * pVec->getWordArraySize()));
     }
 }
 
