@@ -20,8 +20,9 @@ void NaiveBayesClassifier::setHyperparameters(std::string hyperparameters)
     std::string token;
     std::istringstream tokenStream(hyperparameters);
 
-    // "alpha=1.0"
-    alpha = 1.0;
+    // "smoothing_param_m=1.0,smoothing_param_p=0.5"
+    smoothing_param_m = 1.0;
+	smoothing_param_p = 0.5;
 
     while (std::getline(tokenStream, token, ',')) {
         std::istringstream pairStream(token);
@@ -30,8 +31,11 @@ void NaiveBayesClassifier::setHyperparameters(std::string hyperparameters)
 
         if (std::getline(pairStream, key, '=') && pairStream >> value) {
             cout << key << " = " << value << endl;
-            if (key == "alpha") {
-                alpha = value;
+            if (key == "smoothing_param_m") {
+                smoothing_param_m = value;
+            }
+			else if (key == "smoothing_param_p") {
+                smoothing_param_p = value;
             }
         }
     }
@@ -75,12 +79,13 @@ void NaiveBayesClassifier::fit(std::string abs_filepath_to_features, std::string
 
     log_prior_pos = std::log(static_cast<double>(num_pos) / num_sentences);
     log_prior_neg = std::log(static_cast<double>(num_neg) / num_sentences);
+	double mp = smoothing_param_m * smoothing_param_p;
 
     for (const auto& word : pVec->word_array)
     {
         int idx = pVec->word_to_idx[word];
-        log_prob_pos[idx] = std::log((word_count_pos[idx] + alpha) / (total_words_pos + alpha * pVec->getWordArraySize()));
-        log_prob_neg[idx] = std::log((word_count_neg[idx] + alpha) / (total_words_neg + alpha * pVec->getWordArraySize()));
+        log_prob_pos[idx] = std::log((word_count_pos[idx] + mp) / (total_words_pos + smoothing_param_m));
+        log_prob_neg[idx] = std::log((word_count_neg[idx] + mp) / (total_words_neg + smoothing_param_m));
     }
 }
 
@@ -93,7 +98,7 @@ double NaiveBayesClassifier::calculate_log_probability(const std::vector<double>
     {
         if (features[i] > 0)
         {
-            log_prob += features[i] * log_prob_map.at(i);
+            log_prob += log_prob_map.at(i);
         }
     }
     return log_prob;

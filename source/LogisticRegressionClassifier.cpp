@@ -21,18 +21,6 @@ double LogisticRegressionClassifier::predict_proba(const std::vector<double>& fe
         z += weights[i] * features[i];
     }
 
-    double l1_penalty = 0.0;
-    for (size_t i = 0; i < weights.size(); ++i) {
-        l1_penalty += std::abs(weights[i]);
-    }
-
-    double l2_penalty = 0.0;
-    for (size_t i = 0; i < weights.size(); ++i) {
-        l2_penalty += weights[i] * weights[i];
-    }
-
-    z -= l1_regularization_param * l1_penalty + l2_regularization_param * l2_penalty;
-
     return 1.0 / (1.0 + exp(-z));
 }
 
@@ -41,9 +29,9 @@ void LogisticRegressionClassifier::setHyperparameters(std::string hyperparameter
     std::string token;
     std::istringstream tokenStream(hyperparameters);
 
-    // "bias=0.0,epochs=10,learning_rate=0.01,l1_regularization_param=0.005,l2_regularization_param=0.0"
+    // "bias=0.0,epochs=15,learning_rate=0.01,l1_regularization_param=0.005,l2_regularization_param=0.0"
     bias = 0.0;
-    epochs = 10;
+    epochs = 15;
     learning_rate = 0.01;
     l1_regularization_param = 0.005;
     l2_regularization_param = 0.0;
@@ -85,7 +73,9 @@ void LogisticRegressionClassifier::fit(std::string abs_filepath_to_features, std
     std::vector<int> labels(sentences.size());
 
     std::ifstream label_file(abs_filepath_to_labels);
-    std::string label;
+    if (!label_file.is_open()) {
+        throw std::runtime_error("Unable to open label file");
+    }
     for (size_t i = 0; i < labels.size(); ++i)
     {
         label_file >> labels[i];
@@ -107,12 +97,16 @@ void LogisticRegressionClassifier::fit(std::string abs_filepath_to_features, std
             double y_true = labels[i];
             double y_pred = predict_proba(features);
             double error = y_pred - y_true;
+
             total_loss += y_true * log(y_pred) + (1 - y_true) * log(1 - y_pred);
 
             for (size_t j = 0; j < features.size(); ++j)
             {
-                weights[j] -= learning_rate * error * features[j];
+                double gradient = error * features[j];
+
+                weights[j] -= learning_rate * (gradient + l1_regularization_param * (weights[j] > 0 ? 1 : -1) + 2 * l2_regularization_param * weights[j]);
             }
+
             bias -= learning_rate * error;
         }
         total_loss = -total_loss / sentences.size();

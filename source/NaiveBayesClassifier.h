@@ -72,7 +72,8 @@ public:
     void load(const std::string& filename) override;
 
 private:
-    double alpha; /**< Laplace smoothing parameter. */
+    double smoothing_param_m; /**< Laplace smoothing parameter. */
+	double smoothing_param_p; /**< Laplace smoothing parameter. */
     std::unordered_map<int, double> log_prob_pos; /**< Log probabilities for positive class. */
     std::unordered_map<int, double> log_prob_neg; /**< Log probabilities for negative class. */
     double log_prior_pos; /**< Log prior probability for positive class. */

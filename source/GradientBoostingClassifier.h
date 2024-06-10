@@ -71,12 +71,9 @@ public:
 
 private:
     std::vector<std::unique_ptr<DecisionTree>> trees; /**< Vector of decision trees. */
-    std::vector<double> tree_weights; /**< Vector of weights for decision trees. */
     int n_trees; /**< Number of trees in the ensemble. */
     int max_depth; /**< Maximum depth of each decision tree. */
     double learning_rate; /**< Learning rate for gradient boosting. */
-    double l1_regularization_param; /**< L1 regularization parameter. */
-    double l2_regularization_param; /**< L2 regularization parameter. */
 
     /**
      * @brief Predict using a single decision tree.

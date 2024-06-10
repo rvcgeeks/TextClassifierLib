@@ -14,6 +14,9 @@
 
 #include "GlobalData.h"
 
+#define ID_VECTORIZER_COUNT     1
+#define ID_VECTORIZER_TFIDF     2
+
 /**
  * @brief Structure representing a sentence with its corresponding label.
  */

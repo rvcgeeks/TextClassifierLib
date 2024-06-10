@@ -25,7 +25,7 @@ double GradientBoostingClassifier::predict_proba(const std::vector<double>& feat
     for (size_t i = 0; i < trees.size(); ++i)
     {
         double tree_prediction = predict_tree(*trees[i], features);
-        score += learning_rate * (tree_prediction - l1_regularization_param * std::abs(tree_prediction) - l2_regularization_param * (tree_prediction * tree_prediction));
+        score += learning_rate * tree_prediction;
     }
     return 1.0 / (1.0 + exp(-score));
 }
@@ -35,12 +35,10 @@ void GradientBoostingClassifier::setHyperparameters(std::string hyperparameters)
     std::string token;
     std::istringstream tokenStream(hyperparameters);
 
-    // "n_trees=50,max_depth=5,learning_rate=0.01,l1_regularization_param=0.005,l2_regularization_param=0.0"
+    // "n_trees=50,max_depth=5,learning_rate=0.01"
     n_trees = 50;
     max_depth = 5;
     learning_rate = 0.01;
-    l1_regularization_param = 0.005;
-    l2_regularization_param = 0.0;
 
     while (std::getline(tokenStream, token, ',')) {
         std::istringstream pairStream(token);
@@ -58,12 +56,6 @@ void GradientBoostingClassifier::setHyperparameters(std::string hyperparameters)
             else if (key == "learning_rate") {
                 learning_rate = value;
             }
-            else if (key == "l1_regularization_param") {
-                l1_regularization_param = value;
-            }
-            else if (key == "l2_regularization_param") {
-                l2_regularization_param = value;
-            }
         }
     }
 }
@@ -74,7 +66,6 @@ void GradientBoostingClassifier::fit(std::string abs_filepath_to_features, std::
 
     size_t num_features = pVec->word_array.size();
     trees.clear();
-    tree_weights.clear();
 
     std::vector<std::shared_ptr<Sentence>> sentences = pVec->sentences;
     std::vector<double> labels(sentences.size());
@@ -108,7 +99,6 @@ void GradientBoostingClassifier::fit(std::string abs_filepath_to_features, std::
         auto tree = std::make_unique<DecisionTree>(max_depth);
         tree->fit(sentences);
         trees.push_back(std::move(tree));
-        tree_weights.push_back(learning_rate);
     }
 }
 
@@ -184,7 +174,7 @@ void GradientBoostingClassifier::save(const std::string& filename) const
     outFile.write(reinterpret_cast<const char*>(&n_trees), sizeof(n_trees));
     outFile.write(reinterpret_cast<const char*>(&max_depth), sizeof(max_depth));
     outFile.write(reinterpret_cast<const char*>(&learning_rate), sizeof(learning_rate));
-
+    
     outFile.close();
 }
 
@@ -212,6 +202,6 @@ void GradientBoostingClassifier::load(const std::string& filename)
     inFile.read(reinterpret_cast<char*>(&n_trees), sizeof(n_trees));
     inFile.read(reinterpret_cast<char*>(&max_depth), sizeof(max_depth));
     inFile.read(reinterpret_cast<char*>(&learning_rate), sizeof(learning_rate));
-
+    
     inFile.close();
 }

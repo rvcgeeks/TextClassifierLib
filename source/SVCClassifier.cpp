@@ -30,9 +30,9 @@ void SVCClassifier::setHyperparameters(std::string hyperparameters)
     std::string token;
     std::istringstream tokenStream(hyperparameters);
 
-    // "bias=0.0,epochs=10,learning_rate=0.01,l1_regularization_param=0.005,l2_regularization_param=0.0"
+    // "bias=0.0,epochs=15,learning_rate=0.01,l1_regularization_param=0.005,l2_regularization_param=0.0"
     bias = 0.0;
-    epochs = 10;
+    epochs = 15;
     learning_rate = 0.01;
     l1_regularization_param = 0.005;
     l2_regularization_param = 0.0;
@@ -101,7 +101,7 @@ void SVCClassifier::fit(std::string abs_filepath_to_features, std::string abs_fi
             {
                 for (size_t j = 0; j < features.size(); ++j)
                 {
-                    weights[j] += learning_rate * (y_true * features[j] - 2 * l1_regularization_param * weights[j] - 2 * l2_regularization_param * weights[j] * weights[j]);
+                    weights[j] += learning_rate * (y_true * features[j] - l1_regularization_param * (weights[j] > 0 ? 1 : -1) - 2 * l2_regularization_param * weights[j]);
                 }
                 bias += learning_rate * y_true;
             }
@@ -109,7 +109,7 @@ void SVCClassifier::fit(std::string abs_filepath_to_features, std::string abs_fi
             {
                 for (size_t j = 0; j < features.size(); ++j)
                 {
-                    weights[j] += learning_rate * (-2 * l1_regularization_param * weights[j] - 2 * l2_regularization_param * weights[j] * weights[j]);
+                    weights[j] += learning_rate * (-l1_regularization_param * (weights[j] > 0 ? 1 : -1) - 2 * l2_regularization_param * weights[j]);
                 }
             }
         }
