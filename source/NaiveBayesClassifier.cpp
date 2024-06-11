@@ -98,7 +98,7 @@ double NaiveBayesClassifier::calculate_log_probability(const std::vector<double>
     {
         if (features[i] > 0)
         {
-            log_prob += log_prob_map.at(i);
+			log_prob += std::abs(features[i]) * log_prob_map.at(i);
         }
     }
     return log_prob;
