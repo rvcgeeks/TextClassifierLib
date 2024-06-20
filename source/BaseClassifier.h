@@ -6,9 +6,15 @@
 #ifndef BASECLASSIFIER_H__
 #define BASECLASSIFIER_H__
 
+// Comment out if benchmark not needed
+#define BENCHMARK
+
 #include <iostream>
 #include <sstream>
 #include <string>
+#ifdef BENCHMARK
+#include <chrono>
+#endif
 
 #include "CountVectorizer.h"
 #include "TfidfVectorizer.h"

@@ -105,6 +105,8 @@ public:
      */
     virtual std::vector<double> getSentenceFeatures(std::vector<std::string> sentence_words) const = 0;
 
+    virtual std::vector<double> getFrequencies(std::unordered_map<int, double> term_freqs) const = 0;
+
     /**
      * @brief Retrieves the word at the specified index.
      * 
@@ -160,6 +162,7 @@ protected:
     std::vector<std::string> word_array; /**< Array storing words. */
     std::unordered_map<std::string, int> word_to_idx; /**< Map of words to their indices. */
     std::vector<std::shared_ptr<Sentence>> sentences; /**< Vector storing sentences. */
+    int this_vectorizer_id;
     bool binary; /**< Flag indicating binary encoding. */
     bool case_sensitive; /**< Flag indicating case sensitivity. */
     bool include_stopwords; /**< Flag indicating inclusion of stop words. */

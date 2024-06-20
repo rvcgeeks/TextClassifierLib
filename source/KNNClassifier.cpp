@@ -51,12 +51,9 @@ void KNNClassifier::fit(std::string abs_filepath_to_features, std::string abs_fi
     std::string label;
     for (size_t i = 0; i < sentences.size(); ++i)
     {
+        std::vector<double> features;
         const auto& sentence_map = sentences[i]->sentence_map;
-        std::vector<double> features(num_features, 0);
-        for (const auto& entry : sentence_map)
-        {
-            features[entry.first] = entry.second;
-        }
+        features = pVec->getFrequencies(sentence_map);
         training_features.push_back(features);
 
         label_file >> label;
@@ -85,11 +82,38 @@ void KNNClassifier::predict(std::string abs_filepath_to_features, std::string ab
         return;
     }
 
+    #ifdef BENCHMARK
+    double sumduration = 0.0;
+    double sumstrlen = 0.0;
+    size_t num_rows = 0;
+    #endif
+
     while (getline(in, feature_input))
     {
+        #ifdef BENCHMARK
+        auto start = std::chrono::high_resolution_clock::now();
+        #endif
+
         Prediction result = predict(feature_input);
+
+        #ifdef BENCHMARK
+        auto end = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double, std::milli> duration = end - start;
+        double milliseconds = duration.count();
+        sumduration += milliseconds;
+        sumstrlen += feature_input.length();
+        num_rows++;
+        #endif
+
         out << result.label << "," << result.probability << std::endl;
     }
+
+    #ifdef BENCHMARK
+    double avgduration = sumduration / num_rows;
+    cout << "Average Time per Text = " << avgduration << " ms" << endl;
+    double avgstrlen = sumstrlen / num_rows;
+    cout << "Average Length of Text (chars) = " << avgstrlen << endl;
+    #endif
 
     in.close();
     out.close();

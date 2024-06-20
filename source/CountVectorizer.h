@@ -140,6 +140,8 @@ public:
      */
     std::vector<double> getSentenceFeatures(std::vector<std::string> sentence_words) const override;
 
+    std::vector<double> getFrequencies(std::unordered_map<int, double> term_freqs) const override;
+
     /**
      * @brief Save the CountVectorizer model to a file.
      *

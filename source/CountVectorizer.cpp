@@ -17,6 +17,7 @@ CountVectorizer::CountVectorizer()
     binary = true;
     case_sensitive = true;
     include_stopwords = true;
+    this_vectorizer_id = ID_VECTORIZER_COUNT;
 }
 
 /**
@@ -315,6 +316,19 @@ std::vector<double> CountVectorizer::getSentenceFeatures(std::vector<std::string
             int idx = word_to_idx.at(word);
             sentence_features[idx]++;
         }
+    }
+    return sentence_features;
+}
+
+std::vector<double> CountVectorizer::getFrequencies(std::unordered_map<int, double> term_freqs) const
+{
+    std::vector<double> sentence_features(word_array.size(), 0.0);
+    for (const auto& entry : term_freqs)
+    {
+        int term_idx = entry.first;
+        int term_freq = entry.second;
+        double tf = term_freq;
+        sentence_features[term_idx] = tf;
     }
     return sentence_features;
 }

@@ -87,18 +87,23 @@ void LogisticRegressionClassifier::fit(std::string abs_filepath_to_features, std
         double total_loss = 0.0;
         for (size_t i = 0; i < sentences.size(); ++i)
         {
+            std::vector<double> features;
             const auto& sentence_map = sentences[i]->sentence_map;
-            std::vector<double> features(num_features, 0);
-            for (const auto& entry : sentence_map)
-            {
-                features[entry.first] = entry.second;
-            }
-
+            features = pVec->getFrequencies(sentence_map);
             double y_true = labels[i];
+            double y_false;
+            if (1.0 == y_true)
+            {
+                y_false = 0.0;
+            }
+            else
+            {
+                y_false = 1.0;
+            }
             double y_pred = predict_proba(features);
             double error = y_pred - y_true;
 
-            total_loss += y_true * log(y_pred) + (1 - y_true) * log(1 - y_pred);
+            total_loss += y_true * log(y_pred) + y_false * log(1 - y_pred);
 
             for (size_t j = 0; j < features.size(); ++j)
             {
@@ -157,11 +162,38 @@ void LogisticRegressionClassifier::predict(std::string abs_filepath_to_features,
         return;
     }
 
+    #ifdef BENCHMARK
+    double sumduration = 0.0;
+    double sumstrlen = 0.0;
+    size_t num_rows = 0;
+    #endif
+
     while (getline(in, feature_input))
     {
+        #ifdef BENCHMARK
+        auto start = std::chrono::high_resolution_clock::now();
+        #endif
+
         Prediction result = predict(feature_input);
+
+        #ifdef BENCHMARK
+        auto end = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double, std::milli> duration = end - start;
+        double milliseconds = duration.count();
+        sumduration += milliseconds;
+        sumstrlen += feature_input.length();
+        num_rows++;
+        #endif
+
         out << result.label << "," << result.probability << std::endl;
     }
+
+    #ifdef BENCHMARK
+    double avgduration = sumduration / num_rows;
+    cout << "Average Time per Text = " << avgduration << " ms" << endl;
+    double avgstrlen = sumstrlen / num_rows;
+    cout << "Average Length of Text (chars) = " << avgstrlen << endl;
+    #endif
 
     in.close();
     out.close();

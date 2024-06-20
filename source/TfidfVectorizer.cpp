@@ -13,6 +13,7 @@ TfidfVectorizer::TfidfVectorizer()
     binary = true;
     case_sensitive = true;
     include_stopwords = true;
+    this_vectorizer_id = ID_VECTORIZER_TFIDF;
 }
 
 TfidfVectorizer::TfidfVectorizer(bool binary_, bool case_sensitive_, bool include_stopwords_)
@@ -100,7 +101,7 @@ void TfidfVectorizer::fit(string abs_filepath_to_features, string abs_filepath_t
                 doc_count++;
             }
         }
-        idf_values[word_idx.second] = log(double(sentences.size()) / (1 + doc_count));
+        idf_values[word_idx.second] = log1p(double(sentences.size()) / (1 + doc_count));
     }
 }
 
@@ -255,6 +256,22 @@ vector<string> TfidfVectorizer::buildSentenceVector(string sentence_)
     return fixed_ret;
 }
 
+std::vector<double> TfidfVectorizer::getFrequencies(std::unordered_map<int, double> term_freqs) const
+{
+    std::vector<double> sentence_features(word_array.size(), 0.0);
+    for (const auto& entry : term_freqs)
+    {
+        int term_idx = entry.first;
+        int term_freq = entry.second;
+        double tf = term_freq;
+        double idf = idf_values.at(term_idx);
+        sentence_features[term_idx] = tf * idf;
+        //cout << sentence_features[term_idx] << " ";
+    }
+    //cout << endl;
+    return sentence_features;
+}
+
 std::vector<double> TfidfVectorizer::getSentenceFeatures(std::vector<std::string> sentence_words) const
 {
     std::vector<double> sentence_features(word_array.size(), 0.0);
@@ -274,10 +291,6 @@ std::vector<double> TfidfVectorizer::getSentenceFeatures(std::vector<std::string
         int term_idx = entry.first;
         int term_freq = entry.second;
         double tf = term_freq;
-        if (binary)
-        {
-            tf = 1.0;
-        }
         double idf = idf_values.at(term_idx);
         sentence_features[term_idx] = tf * idf;
     }

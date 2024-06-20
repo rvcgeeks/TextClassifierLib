@@ -50,8 +50,10 @@ void NaiveBayesClassifier::fit(std::string abs_filepath_to_features, std::string
 
     int num_pos = 0;
     int num_neg = 0;
-    std::unordered_map<int, int> word_count_pos;
-    std::unordered_map<int, int> word_count_neg;
+    std::unordered_map<int, double> word_count_pos;
+    std::unordered_map<int, double> word_count_neg;
+    std::vector<double> tfidf_features_pos;
+    std::vector<double> tfidf_features_neg;
     int total_words_pos = 0;
     int total_words_neg = 0;
 
@@ -80,12 +82,34 @@ void NaiveBayesClassifier::fit(std::string abs_filepath_to_features, std::string
     log_prior_pos = std::log(static_cast<double>(num_pos) / num_sentences);
     log_prior_neg = std::log(static_cast<double>(num_neg) / num_sentences);
 	double mp = smoothing_param_m * smoothing_param_p;
+    double tfidf_sum_pos = 0.0;
+    double tfidf_sum_neg = 0.0;
+
+    if (ID_VECTORIZER_TFIDF == pVec->this_vectorizer_id) {
+        tfidf_features_pos = pVec->getFrequencies(word_count_pos);
+        tfidf_features_neg = pVec->getFrequencies(word_count_neg);
+        for (const auto& v : tfidf_features_pos)
+        {
+            tfidf_sum_pos += v;
+        }
+        for (const auto& v : tfidf_features_neg)
+        {
+            tfidf_sum_neg += v;
+        }
+    }
 
     for (const auto& word : pVec->word_array)
     {
         int idx = pVec->word_to_idx[word];
-        log_prob_pos[idx] = std::log((word_count_pos[idx] + mp) / (total_words_pos + smoothing_param_m));
-        log_prob_neg[idx] = std::log((word_count_neg[idx] + mp) / (total_words_neg + smoothing_param_m));
+        if (ID_VECTORIZER_TFIDF == pVec->this_vectorizer_id) {
+            log_prob_pos[idx] = std::log((tfidf_features_pos[idx] + mp) / (tfidf_sum_pos + smoothing_param_m + pVec->word_array.size()));
+            log_prob_neg[idx] = std::log((tfidf_features_neg[idx] + mp) / (tfidf_sum_neg + smoothing_param_m + pVec->word_array.size()));
+        }
+        else 
+        {
+            log_prob_pos[idx] = std::log((word_count_pos[idx] + mp) / (total_words_pos + smoothing_param_m + pVec->word_array.size()));
+            log_prob_neg[idx] = std::log((word_count_neg[idx] + mp) / (total_words_neg + smoothing_param_m + pVec->word_array.size()));
+        }
     }
 }
 
@@ -98,7 +122,7 @@ double NaiveBayesClassifier::calculate_log_probability(const std::vector<double>
     {
         if (features[i] > 0)
         {
-			log_prob += std::abs(features[i]) * log_prob_map.at(i);
+            log_prob += std::abs(features[i]) * log_prob_map.at(i);
         }
     }
     return log_prob;
@@ -151,11 +175,38 @@ void NaiveBayesClassifier::predict(std::string abs_filepath_to_features, std::st
         return;
     }
 
+    #ifdef BENCHMARK
+    double sumduration = 0.0;
+    double sumstrlen = 0.0;
+    size_t num_rows = 0;
+    #endif
+
     while (getline(in, feature_input))
-    {
+    {  
+        #ifdef BENCHMARK
+        auto start = std::chrono::high_resolution_clock::now();
+        #endif
+        
         Prediction result = predict(feature_input);
+    
+        #ifdef BENCHMARK
+        auto end = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double, std::milli> duration = end - start;
+        double milliseconds = duration.count();
+        sumduration += milliseconds;
+        sumstrlen += feature_input.length();
+        num_rows++;
+        #endif
+
         out << result.label << "," << result.probability << std::endl;
     }
+
+    #ifdef BENCHMARK
+    double avgduration = sumduration / num_rows;
+    cout << "Average Time per Text = " << avgduration << " ms" << endl;
+    double avgstrlen = sumstrlen / num_rows;
+    cout << "Average Length of Text (chars) = " << avgstrlen << endl;
+    #endif
 
     in.close();
     out.close();

@@ -116,11 +116,38 @@ void RandomForestClassifier::predict(std::string abs_filepath_to_features, std::
         return;
     }
 
+    #ifdef BENCHMARK
+    double sumduration = 0.0;
+    double sumstrlen = 0.0;
+    size_t num_rows = 0;
+    #endif
+
     while (getline(in, feature_input))
     {
+        #ifdef BENCHMARK
+        auto start = std::chrono::high_resolution_clock::now();
+        #endif
+
         Prediction result = predict(feature_input);
+
+        #ifdef BENCHMARK
+        auto end = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double, std::milli> duration = end - start;
+        double milliseconds = duration.count();
+        sumduration += milliseconds;
+        sumstrlen += feature_input.length();
+        num_rows++;
+        #endif
+
         out << result.label << "," << result.probability << std::endl;
     }
+
+    #ifdef BENCHMARK
+    double avgduration = sumduration / num_rows;
+    cout << "Average Time per Text = " << avgduration << " ms" << endl;
+    double avgstrlen = sumstrlen / num_rows;
+    cout << "Average Length of Text (chars) = " << avgstrlen << endl;
+    #endif
 
     in.close();
     out.close();
