@@ -30,7 +30,10 @@ void NaiveBayesClassifier::setHyperparameters(std::string hyperparameters)
         double value;
 
         if (std::getline(pairStream, key, '=') && pairStream >> value) {
-            cout << key << " = " << value << endl;
+            cout << key << " = " << value << endl;        
+            if (key == "minfrequency") {
+                minfrequency = value;
+            }
             if (key == "smoothing_param_m") {
                 smoothing_param_m = value;
             }
@@ -43,6 +46,10 @@ void NaiveBayesClassifier::setHyperparameters(std::string hyperparameters)
 
 void NaiveBayesClassifier::fit(std::string abs_filepath_to_features, std::string abs_filepath_to_labels)
 {
+    if (minfrequency > 0)
+    {
+        pVec->scanForSparseHistogram(abs_filepath_to_features, minfrequency);
+    }
     pVec->fit(abs_filepath_to_features, abs_filepath_to_labels);
 
     std::vector<std::shared_ptr<Sentence>> sentences = pVec->sentences;
@@ -128,11 +135,11 @@ double NaiveBayesClassifier::calculate_log_probability(const std::vector<double>
     return log_prob;
 }
 
-Prediction NaiveBayesClassifier::predict(std::string sentence)
+Prediction NaiveBayesClassifier::predict(std::string sentence, bool preprocess)
 {
     GlobalData vars;
     Prediction result;
-    std::vector<std::string> processed_input = pVec->buildSentenceVector(sentence);
+    std::vector<std::string> processed_input = pVec->buildSentenceVector(sentence, preprocess);
     std::vector<double> feature_vector = pVec->getSentenceFeatures(processed_input);
 
     double log_prob_pos = calculate_log_probability(feature_vector, true);
@@ -157,7 +164,7 @@ Prediction NaiveBayesClassifier::predict(std::string sentence)
     return result;
 }
 
-void NaiveBayesClassifier::predict(std::string abs_filepath_to_features, std::string abs_filepath_to_labels)
+void NaiveBayesClassifier::predict(std::string abs_filepath_to_features, std::string abs_filepath_to_labels, bool preprocess)
 {
     std::ifstream in(abs_filepath_to_features);
     std::ofstream out(abs_filepath_to_labels);
@@ -187,7 +194,7 @@ void NaiveBayesClassifier::predict(std::string abs_filepath_to_features, std::st
         auto start = std::chrono::high_resolution_clock::now();
         #endif
         
-        Prediction result = predict(feature_input);
+        Prediction result = predict(feature_input, preprocess);
     
         #ifdef BENCHMARK
         auto end = std::chrono::high_resolution_clock::now();

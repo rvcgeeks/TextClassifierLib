@@ -51,15 +51,15 @@ int main(int argc, char **argv)
 		cout << "Predicting\n";
 		pclsfr->load(argv[4]);
 		cout << "Model Loaded" << endl;
-		pclsfr->predict(argv[5], argv[6]);
+		pclsfr->predict(argv[5], argv[6], false);
 
 	// txtclsfr 1 2 my_model.bin "This is string to classify" 
 	} else if(argv[1][0] == '1') {
 		Prediction result;
 		pclsfr->load(argv[4]);
 		cout << "Model Loaded" << endl;
-		result = pclsfr->predict(argv[5]);
-		cout << result.label << "    "<< result.probability << endl;
+		result = pclsfr->predict(argv[5], false);
+		cout << result.label << "    " << result.probability << endl;
 	}
 
 	cout << "Done\n";

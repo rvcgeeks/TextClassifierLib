@@ -42,6 +42,8 @@ public:
      */
     virtual void fit(std::string abs_filepath_to_features, std::string abs_filepath_to_labels) = 0;
 
+    void scanForSparseHistogram(std::string abs_filepath_to_features, int minfrequency);
+
     /**
      * @brief Returns the shape of the vectorized data.
      */
@@ -95,7 +97,7 @@ public:
      * @param sentence_ The sentence to be vectorized.
      * @return Vector representation of the sentence.
      */
-    virtual std::vector<std::string> buildSentenceVector(std::string sentence_) = 0;
+    std::vector<std::string> buildSentenceVector(std::string sentence_, bool preprocess=false);
 
     /**
      * @brief Retrieves the feature vector of a sentence.
@@ -162,6 +164,7 @@ protected:
     std::vector<std::string> word_array; /**< Array storing words. */
     std::unordered_map<std::string, int> word_to_idx; /**< Map of words to their indices. */
     std::vector<std::shared_ptr<Sentence>> sentences; /**< Vector storing sentences. */
+    std::unordered_map<std::string, int> histogram;
     int this_vectorizer_id;
     bool binary; /**< Flag indicating binary encoding. */
     bool case_sensitive; /**< Flag indicating case sensitivity. */

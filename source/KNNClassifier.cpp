@@ -31,6 +31,9 @@ void KNNClassifier::setHyperparameters(std::string hyperparameters)
 
         if (std::getline(pairStream, key, '=') && pairStream >> value) {
             cout << key << " = " << value << endl;
+            if (key == "minfrequency") {
+                minfrequency = value;
+            }
             if (key == "k") {
                 k = value;
             }
@@ -40,6 +43,10 @@ void KNNClassifier::setHyperparameters(std::string hyperparameters)
 
 void KNNClassifier::fit(std::string abs_filepath_to_features, std::string abs_filepath_to_labels)
 {
+    if (minfrequency > 0)
+    {
+        pVec->scanForSparseHistogram(abs_filepath_to_features, minfrequency);
+    }
     pVec->fit(abs_filepath_to_features, abs_filepath_to_labels);
 
     size_t num_features = pVec->word_array.size();
@@ -64,7 +71,7 @@ void KNNClassifier::fit(std::string abs_filepath_to_features, std::string abs_fi
     kd_tree.build(training_features, training_labels);
 }
 
-void KNNClassifier::predict(std::string abs_filepath_to_features, std::string abs_filepath_to_labels)
+void KNNClassifier::predict(std::string abs_filepath_to_features, std::string abs_filepath_to_labels, bool preprocess)
 {
     std::ifstream in(abs_filepath_to_features);
     std::ofstream out(abs_filepath_to_labels);
@@ -94,7 +101,7 @@ void KNNClassifier::predict(std::string abs_filepath_to_features, std::string ab
         auto start = std::chrono::high_resolution_clock::now();
         #endif
 
-        Prediction result = predict(feature_input);
+        Prediction result = predict(feature_input, preprocess);
 
         #ifdef BENCHMARK
         auto end = std::chrono::high_resolution_clock::now();
@@ -119,10 +126,10 @@ void KNNClassifier::predict(std::string abs_filepath_to_features, std::string ab
     out.close();
 }
 
-Prediction KNNClassifier::predict(std::string sentence)
+Prediction KNNClassifier::predict(std::string sentence, bool preprocess)
 {
     GlobalData vars;
-    std::vector<std::string> processed_input = pVec->buildSentenceVector(sentence);
+    std::vector<std::string> processed_input = pVec->buildSentenceVector(sentence, preprocess);
     std::vector<double> feature_vector = pVec->getSentenceFeatures(processed_input);
 
     int label = kd_tree.nearestNeighbor(feature_vector);

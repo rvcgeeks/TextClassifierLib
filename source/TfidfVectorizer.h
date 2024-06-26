@@ -113,13 +113,6 @@ public:
     bool ContainsWord(const string& word_to_check) override;
 
     /**
-     * @brief Build a sentence vector.
-     * @param sentence_ The sentence to build vector for.
-     * @return The vector representation of the sentence.
-     */
-    vector<string> buildSentenceVector(string sentence_) override;
-
-    /**
      * @brief Get the word at a given index.
      * @param idx The index of the word.
      * @return The word at the specified index.

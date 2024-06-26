@@ -47,14 +47,14 @@ public:
      * @param abs_filepath_to_features Absolute file path to the file containing features.
      * @param abs_filepath_to_labels Absolute file path to the file to save predicted labels.
      */
-    void predict(std::string abs_filepath_to_features, std::string abs_filepath_to_labels) override;
+    void predict(std::string abs_filepath_to_features, std::string abs_filepath_to_labels, bool preprocess = true) override;
 
     /**
      * @brief Predict label for a single input sentence.
      * @param sentence Input sentence to predict label for.
      * @return Prediction object containing predicted label.
      */
-    Prediction predict(std::string sentence) override;
+    Prediction predict(std::string sentence, bool preprocess = true) override;
 
     /**
      * @brief Save the model to a file.

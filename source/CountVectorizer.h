@@ -125,14 +125,6 @@ public:
     bool ContainsWord(const string& word_to_check) override;
 
     /**
-     * @brief Split a sentence into a vector of words.
-     *
-     * @param sentence_ The sentence to split.
-     * @return Vector of words.
-     */
-    vector<string> buildSentenceVector(string sentence_) override;
-
-    /**
      * @brief Get the feature vector for a given sentence.
      *
      * @param sentence_words The words of the sentence.

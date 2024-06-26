@@ -174,7 +174,7 @@ void CountVectorizer::pushSentenceToWordArray(vector<string> new_sentence_vector
 {
     for (const string& word : new_sentence_vector)
     {
-        if (!ContainsWord(word))
+        if (!ContainsWord(word) && !histogram.count(word))
         {
             word_array.push_back(word);
             word_to_idx[word] = word_array.size() - 1;
@@ -194,6 +194,11 @@ shared_ptr<Sentence> CountVectorizer::createSentenceObject(vector<string> new_se
     shared_ptr<Sentence> new_sentence(new Sentence);
     for (const auto& word : new_sentence_vector)
     {
+        if (histogram.count(word))
+        {
+            continue;
+        }
+
         int idx = word_to_idx[word];
         if (new_sentence->sentence_map.count(idx))
         {
@@ -239,65 +244,6 @@ void CountVectorizer::addSentence(string new_sentence, bool label_)
 bool CountVectorizer::ContainsWord(const string& word_to_check)
 {
     return word_to_idx.count(word_to_check) > 0;
-}
-
-/**
- * @brief Split a sentence into a vector of words.
- *
- * @param sentence_ The sentence to split.
- * @return Vector of words.
- */
-vector<string> CountVectorizer::buildSentenceVector(string sentence_)
-{
-    GlobalData vars;
-    string new_word = "";
-    vector<string> ret;
-
-    for (char x : sentence_)
-    {
-        if (isupper(x) && !case_sensitive)
-        {
-            x = tolower(x);
-        }
-        if (x == ' ')
-        {
-            if (!include_stopwords && vars.stopWords.count(new_word))
-            {
-                new_word = "";
-            }
-            else
-            {
-                ret.push_back(new_word);
-                new_word = "";
-            }
-        }
-        else if (vars.punctuation.count(x))
-        {
-            ret.push_back(new_word);
-            new_word = x;
-            ret.push_back(new_word);
-            new_word = "";
-        }
-        else
-        {
-            new_word += x;
-        }
-    }
-
-    if (new_word != "")
-    {
-        ret.push_back(new_word);
-    }
-
-    vector<string> fixed_ret;
-    for (const auto& s : ret)
-    {
-        if (!s.empty())
-        {
-            fixed_ret.push_back(s);
-        }
-    }
-    return fixed_ret;
 }
 
 /**
@@ -349,6 +295,7 @@ void CountVectorizer::save(std::ofstream& outFile) const
         outFile.write(word.data(), word_size);
     }
 
+    /*
     size_t sentence_size = sentences.size();
     outFile.write(reinterpret_cast<const char*>(&sentence_size), sizeof(sentence_size));
     for (const auto& sentence : sentences)
@@ -362,6 +309,7 @@ void CountVectorizer::save(std::ofstream& outFile) const
         }
         outFile.write(reinterpret_cast<const char*>(&sentence->label), sizeof(sentence->label));
     }
+    */
 
     outFile.write(reinterpret_cast<const char*>(&binary), sizeof(binary));
     outFile.write(reinterpret_cast<const char*>(&case_sensitive), sizeof(case_sensitive));
@@ -391,6 +339,7 @@ void CountVectorizer::load(std::ifstream& inFile)
         word_to_idx[word_array[i]] = i;
     }
 
+    /*
     size_t sentence_size;
     inFile.read(reinterpret_cast<char*>(&sentence_size), sizeof(sentence_size));
     sentences.resize(sentence_size);
@@ -410,6 +359,7 @@ void CountVectorizer::load(std::ifstream& inFile)
         inFile.read(reinterpret_cast<char*>(&sentence->label), sizeof(sentence->label));
         sentences[i] = sentence;
     }
+    */
 
     inFile.read(reinterpret_cast<char*>(&binary), sizeof(binary));
     inFile.read(reinterpret_cast<char*>(&case_sensitive), sizeof(case_sensitive));

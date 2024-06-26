@@ -43,6 +43,9 @@ void LogisticRegressionClassifier::setHyperparameters(std::string hyperparameter
 
         if (std::getline(pairStream, key, '=') && pairStream >> value) {
             cout << key << " = " << value << endl;
+            if (key == "minfrequency") {
+                minfrequency = value;
+            }
             if (key == "bias") {
                 bias = value;
             }
@@ -64,6 +67,10 @@ void LogisticRegressionClassifier::setHyperparameters(std::string hyperparameter
 
 void LogisticRegressionClassifier::fit(std::string abs_filepath_to_features, std::string abs_filepath_to_labels)
 {
+    if (minfrequency > 0)
+    {
+        pVec->scanForSparseHistogram(abs_filepath_to_features, minfrequency);
+    }
     pVec->fit(abs_filepath_to_features, abs_filepath_to_labels);
 
     size_t num_features = pVec->word_array.size();
@@ -122,11 +129,11 @@ void LogisticRegressionClassifier::fit(std::string abs_filepath_to_features, std
     }
 }
 
-Prediction LogisticRegressionClassifier::predict(std::string sentence)
+Prediction LogisticRegressionClassifier::predict(std::string sentence, bool preprocess)
 {
     GlobalData vars;
     Prediction result;
-    std::vector<string> processed_input = pVec->buildSentenceVector(sentence);
+    std::vector<string> processed_input = pVec->buildSentenceVector(sentence, preprocess);
     std::vector<double> feature_vector = pVec->getSentenceFeatures(processed_input);
     double probability = predict_proba(feature_vector);
     
@@ -144,7 +151,7 @@ Prediction LogisticRegressionClassifier::predict(std::string sentence)
     return result;
 }
 
-void LogisticRegressionClassifier::predict(std::string abs_filepath_to_features, std::string abs_filepath_to_labels)
+void LogisticRegressionClassifier::predict(std::string abs_filepath_to_features, std::string abs_filepath_to_labels, bool preprocess)
 {
     std::ifstream in(abs_filepath_to_features);
     std::ofstream out(abs_filepath_to_labels);
@@ -174,7 +181,7 @@ void LogisticRegressionClassifier::predict(std::string abs_filepath_to_features,
         auto start = std::chrono::high_resolution_clock::now();
         #endif
 
-        Prediction result = predict(feature_input);
+        Prediction result = predict(feature_input, preprocess);
 
         #ifdef BENCHMARK
         auto end = std::chrono::high_resolution_clock::now();

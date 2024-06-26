@@ -85,14 +85,14 @@ public:
      * @param abs_filepath_to_features Absolute file path to the features file.
      * @param abs_filepath_to_labels Absolute file path to save the predicted labels.
      */
-    virtual void predict(string abs_filepath_to_features, string abs_filepath_to_labels) = 0;
+    virtual void predict(string abs_filepath_to_features, string abs_filepath_to_labels, bool preprocess = true) = 0;
 
     /**
      * @brief Predict the label for a given sentence.
      * @param sentence The input sentence for prediction.
      * @return Prediction containing the label and probability.
      */
-    virtual Prediction predict(string sentence) = 0;
+    virtual Prediction predict(string sentence, bool preprocess = true) = 0;
 
     /**
      * @brief Save the classifier to a file.
@@ -105,6 +105,8 @@ public:
      * @param filename The name of the file to load the classifier from.
      */
     virtual void load(const std::string& filename) = 0;
+
+    int minfrequency = 0;
 };
 
 #endif // BASECLASSIFIER_H__

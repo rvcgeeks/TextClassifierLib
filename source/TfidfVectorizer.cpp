@@ -154,7 +154,7 @@ void TfidfVectorizer::pushSentenceToWordArray(vector<string> new_sentence_vector
 {
     for (const string& word : new_sentence_vector)
     {
-        if (!ContainsWord(word))
+        if (!ContainsWord(word) && !histogram.count(word))
         {
             word_array.push_back(word);
             word_to_idx[word] = word_array.size() - 1;
@@ -169,6 +169,11 @@ shared_ptr<Sentence> TfidfVectorizer::createSentenceObject(vector<string> new_se
 
     for (const auto& word : new_sentence_vector)
     {
+        if (histogram.count(word))
+        {
+            continue;
+        }
+
         int idx = word_to_idx[word];
         if (term_freqs.count(idx))
         {
@@ -201,59 +206,6 @@ void TfidfVectorizer::addSentence(string new_sentence, bool label_)
 bool TfidfVectorizer::ContainsWord(const string& word_to_check)
 {
     return word_to_idx.count(word_to_check) > 0;
-}
-
-vector<string> TfidfVectorizer::buildSentenceVector(string sentence_)
-{
-    GlobalData vars;
-    string new_word = "";
-    vector<string> ret;
-
-    for (char x : sentence_)
-    {
-        if (isupper(x) && !case_sensitive)
-        {
-            x = tolower(x);
-        }
-        if (x == ' ')
-        {
-            if (!include_stopwords && vars.stopWords.count(new_word))
-            {
-                new_word = "";
-            }
-            else
-            {
-                ret.push_back(new_word);
-                new_word = "";
-            }
-        }
-        else if (vars.punctuation.count(x))
-        {
-            ret.push_back(new_word);
-            new_word = x;
-            ret.push_back(new_word);
-            new_word = "";
-        }
-        else
-        {
-            new_word += x;
-        }
-    }
-
-    if (new_word != "")
-    {
-        ret.push_back(new_word);
-    }
-
-    vector<string> fixed_ret;
-    for (const auto& s : ret)
-    {
-        if (!s.empty())
-        {
-            fixed_ret.push_back(s);
-        }
-    }
-    return fixed_ret;
 }
 
 std::vector<double> TfidfVectorizer::getFrequencies(std::unordered_map<int, double> term_freqs) const
@@ -308,6 +260,7 @@ void TfidfVectorizer::save(std::ofstream& outFile) const
         outFile.write(word.data(), word_size);
     }
 
+    /*
     size_t sentence_size = sentences.size();
     outFile.write(reinterpret_cast<const char*>(&sentence_size), sizeof(sentence_size));
     for (const auto& sentence : sentences)
@@ -321,6 +274,7 @@ void TfidfVectorizer::save(std::ofstream& outFile) const
         }
         outFile.write(reinterpret_cast<const char*>(&sentence->label), sizeof(sentence->label));
     }
+    */
 
     size_t idf_size = idf_values.size();
     outFile.write(reinterpret_cast<const char*>(&idf_size), sizeof(idf_size));
@@ -354,6 +308,7 @@ void TfidfVectorizer::load(std::ifstream& inFile)
         word_to_idx[word_array[i]] = i;
     }
 
+    /*
     size_t sentence_size;
     inFile.read(reinterpret_cast<char*>(&sentence_size), sizeof(sentence_size));
     sentences.resize(sentence_size);
@@ -373,6 +328,7 @@ void TfidfVectorizer::load(std::ifstream& inFile)
         inFile.read(reinterpret_cast<char*>(&sentence->label), sizeof(sentence->label));
         sentences[i] = sentence;
     }
+    */
 
     size_t idf_size;
     inFile.read(reinterpret_cast<char*>(&idf_size), sizeof(idf_size));
