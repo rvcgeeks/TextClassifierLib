@@ -4,6 +4,9 @@
 #include <fstream>
 #include <iostream>
 #include <cmath>
+#include <unordered_map>
+#include <memory>
+#include <sstream>
 
 NaiveBayesClassifier::NaiveBayesClassifier(BaseVectorizer* pvec)
 {
@@ -22,7 +25,7 @@ void NaiveBayesClassifier::setHyperparameters(std::string hyperparameters)
 
     // "smoothing_param_m=1.0,smoothing_param_p=0.5"
     smoothing_param_m = 1.0;
-	smoothing_param_p = 0.5;
+    smoothing_param_p = 0.5;
 
     while (std::getline(tokenStream, token, ',')) {
         std::istringstream pairStream(token);
@@ -30,14 +33,14 @@ void NaiveBayesClassifier::setHyperparameters(std::string hyperparameters)
         double value;
 
         if (std::getline(pairStream, key, '=') && pairStream >> value) {
-            cout << key << " = " << value << endl;        
+            std::cout << key << " = " << value << std::endl;        
             if (key == "minfrequency") {
                 minfrequency = value;
             }
             if (key == "smoothing_param_m") {
                 smoothing_param_m = value;
             }
-			else if (key == "smoothing_param_p") {
+            else if (key == "smoothing_param_p") {
                 smoothing_param_p = value;
             }
         }
@@ -52,62 +55,63 @@ void NaiveBayesClassifier::fit(std::string abs_filepath_to_features, std::string
     }
     pVec->fit(abs_filepath_to_features, abs_filepath_to_labels);
 
-    std::vector<std::shared_ptr<Sentence>> sentences = pVec->sentences;
+    std::vector<std::tr1::shared_ptr<Sentence> > sentences = pVec->sentences;
     int num_sentences = sentences.size();
 
     int num_pos = 0;
     int num_neg = 0;
-    std::unordered_map<int, double> word_count_pos;
-    std::unordered_map<int, double> word_count_neg;
+    std::tr1::unordered_map<int, double> word_count_pos;
+    std::tr1::unordered_map<int, double> word_count_neg;
     std::vector<double> tfidf_features_pos;
     std::vector<double> tfidf_features_neg;
     int total_words_pos = 0;
     int total_words_neg = 0;
 
-    for (const auto& sentence : sentences)
+    for (std::vector<std::tr1::shared_ptr<Sentence> >::const_iterator it = sentences.begin(); it != sentences.end(); ++it)
     {
+        std::tr1::shared_ptr<Sentence> sentence = *it;
         if (sentence->label)
         {
             num_pos++;
-            for (const auto& entry : sentence->sentence_map)
+            for (std::tr1::unordered_map<int, double>::const_iterator entry = sentence->sentence_map.begin(); entry != sentence->sentence_map.end(); ++entry)
             {
-                word_count_pos[entry.first] += entry.second;
-                total_words_pos += entry.second;
+                word_count_pos[entry->first] += entry->second;
+                total_words_pos += entry->second;
             }
         }
         else
         {
             num_neg++;
-            for (const auto& entry : sentence->sentence_map)
+            for (std::tr1::unordered_map<int, double>::const_iterator entry = sentence->sentence_map.begin(); entry != sentence->sentence_map.end(); ++entry)
             {
-                word_count_neg[entry.first] += entry.second;
-                total_words_neg += entry.second;
+                word_count_neg[entry->first] += entry->second;
+                total_words_neg += entry->second;
             }
         }
     }
 
     log_prior_pos = std::log(static_cast<double>(num_pos) / num_sentences);
     log_prior_neg = std::log(static_cast<double>(num_neg) / num_sentences);
-	double mp = smoothing_param_m * smoothing_param_p;
+    double mp = smoothing_param_m * smoothing_param_p;
     double tfidf_sum_pos = 0.0;
     double tfidf_sum_neg = 0.0;
 
     if (ID_VECTORIZER_TFIDF == pVec->this_vectorizer_id) {
         tfidf_features_pos = pVec->getFrequencies(word_count_pos);
         tfidf_features_neg = pVec->getFrequencies(word_count_neg);
-        for (const auto& v : tfidf_features_pos)
+        for (std::vector<double>::const_iterator v = tfidf_features_pos.begin(); v != tfidf_features_pos.end(); ++v)
         {
-            tfidf_sum_pos += v;
+            tfidf_sum_pos += *v;
         }
-        for (const auto& v : tfidf_features_neg)
+        for (std::vector<double>::const_iterator v = tfidf_features_neg.begin(); v != tfidf_features_neg.end(); ++v)
         {
-            tfidf_sum_neg += v;
+            tfidf_sum_neg += *v;
         }
     }
 
-    for (const auto& word : pVec->word_array)
+    for (std::vector<std::string>::const_iterator word = pVec->word_array.begin(); word != pVec->word_array.end(); ++word)
     {
-        int idx = pVec->word_to_idx[word];
+        int idx = pVec->word_to_idx[*word];
         if (ID_VECTORIZER_TFIDF == pVec->this_vectorizer_id) {
             log_prob_pos[idx] = std::log((tfidf_features_pos[idx] + mp) / (tfidf_sum_pos + smoothing_param_m + pVec->word_array.size()));
             log_prob_neg[idx] = std::log((tfidf_features_neg[idx] + mp) / (tfidf_sum_neg + smoothing_param_m + pVec->word_array.size()));
@@ -123,13 +127,13 @@ void NaiveBayesClassifier::fit(std::string abs_filepath_to_features, std::string
 double NaiveBayesClassifier::calculate_log_probability(const std::vector<double>& features, bool is_positive) const
 {
     double log_prob = is_positive ? log_prior_pos : log_prior_neg;
-    const auto& log_prob_map = is_positive ? log_prob_pos : log_prob_neg;
+    const std::tr1::unordered_map<int, double>& log_prob_map = is_positive ? log_prob_pos : log_prob_neg;
 
     for (size_t i = 0; i < features.size(); ++i)
     {
         if (features[i] > 0)
         {
-            log_prob += std::abs(features[i]) * log_prob_map.at(i);
+            log_prob += std::abs(features[i]) * getmapval(log_prob_map, i);
         }
     }
     return log_prob;
@@ -166,8 +170,8 @@ Prediction NaiveBayesClassifier::predict(std::string sentence, bool preprocess)
 
 void NaiveBayesClassifier::predict(std::string abs_filepath_to_features, std::string abs_filepath_to_labels, bool preprocess)
 {
-    std::ifstream in(abs_filepath_to_features);
-    std::ofstream out(abs_filepath_to_labels);
+    std::ifstream in(abs_filepath_to_features.c_str());
+    std::ofstream out(abs_filepath_to_labels.c_str());
     std::string feature_input;
 
     if (!in)
@@ -191,15 +195,14 @@ void NaiveBayesClassifier::predict(std::string abs_filepath_to_features, std::st
     while (getline(in, feature_input))
     {  
         #ifdef BENCHMARK
-        auto start = std::chrono::high_resolution_clock::now();
+        clock_t start = clock();
         #endif
         
         Prediction result = predict(feature_input, preprocess);
     
         #ifdef BENCHMARK
-        auto end = std::chrono::high_resolution_clock::now();
-        std::chrono::duration<double, std::milli> duration = end - start;
-        double milliseconds = duration.count();
+        clock_t end = clock();
+        double milliseconds = 1000.0 * (end - start) / CLOCKS_PER_SEC;
         sumduration += milliseconds;
         sumstrlen += feature_input.length();
         num_rows++;
@@ -210,9 +213,9 @@ void NaiveBayesClassifier::predict(std::string abs_filepath_to_features, std::st
 
     #ifdef BENCHMARK
     double avgduration = sumduration / num_rows;
-    cout << "Average Time per Text = " << avgduration << " ms" << endl;
+    std::cout << "Average Time per Text = " << avgduration << " ms" << std::endl;
     double avgstrlen = sumstrlen / num_rows;
-    cout << "Average Length of Text (chars) = " << avgstrlen << endl;
+    std::cout << "Average Length of Text (chars) = " << avgstrlen << std::endl;
     #endif
 
     in.close();
@@ -221,7 +224,7 @@ void NaiveBayesClassifier::predict(std::string abs_filepath_to_features, std::st
 
 void NaiveBayesClassifier::save(const std::string& filename) const
 {
-    std::ofstream outFile(filename, std::ios::binary);
+    std::ofstream outFile(filename.c_str(), std::ios::binary);
     if (!outFile.is_open())
     {
         std::cerr << "Failed to open file for writing." << std::endl;
@@ -234,18 +237,18 @@ void NaiveBayesClassifier::save(const std::string& filename) const
 
     size = log_prob_pos.size();
     outFile.write(reinterpret_cast<const char*>(&size), sizeof(size));
-    for (const auto& pair : log_prob_pos)
+    for (std::tr1::unordered_map<int, double>::const_iterator pair = log_prob_pos.begin(); pair != log_prob_pos.end(); ++pair)
     {
-        outFile.write(reinterpret_cast<const char*>(&pair.first), sizeof(pair.first));
-        outFile.write(reinterpret_cast<const char*>(&pair.second), sizeof(pair.second));
+        outFile.write(reinterpret_cast<const char*>(&pair->first), sizeof(pair->first));
+        outFile.write(reinterpret_cast<const char*>(&pair->second), sizeof(pair->second));
     }
 
     size = log_prob_neg.size();
     outFile.write(reinterpret_cast<const char*>(&size), sizeof(size));
-    for (const auto& pair : log_prob_neg)
+    for (std::tr1::unordered_map<int, double>::const_iterator pair = log_prob_neg.begin(); pair != log_prob_neg.end(); ++pair)
     {
-        outFile.write(reinterpret_cast<const char*>(&pair.first), sizeof(pair.first));
-        outFile.write(reinterpret_cast<const char*>(&pair.second), sizeof(pair.second));
+        outFile.write(reinterpret_cast<const char*>(&pair->first), sizeof(pair->first));
+        outFile.write(reinterpret_cast<const char*>(&pair->second), sizeof(pair->second));
     }
 
     outFile.write(reinterpret_cast<const char*>(&log_prior_pos), sizeof(log_prior_pos));
@@ -256,7 +259,7 @@ void NaiveBayesClassifier::save(const std::string& filename) const
 
 void NaiveBayesClassifier::load(const std::string& filename)
 {
-    std::ifstream inFile(filename, std::ios::binary);
+    std::ifstream inFile(filename.c_str(), std::ios::binary);
     if (!inFile.is_open())
     {
         std::cerr << "Failed to open file for reading." << std::endl;

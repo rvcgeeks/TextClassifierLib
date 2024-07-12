@@ -10,6 +10,7 @@
 #include <vector>
 #include <unordered_map>
 #include <memory>
+#include <sstream>
 #include <fstream>
 
 #include "GlobalData.h"
@@ -22,7 +23,7 @@
  */
 struct Sentence
 {
-    std::unordered_map<int, double> sentence_map; /**< Map representing the sentence. */
+    std::tr1::unordered_map<int, double> sentence_map; /**< Map representing the sentence. */
     bool label; /**< Label indicating the classification of the sentence. */
 };
 
@@ -32,7 +33,7 @@ struct Sentence
 class BaseVectorizer
 {
 public:
-    virtual ~BaseVectorizer() = default;
+    virtual ~BaseVectorizer() {}
 
     /**
      * @brief Fits the vectorizer on the provided features and labels data.
@@ -107,7 +108,7 @@ public:
      */
     virtual std::vector<double> getSentenceFeatures(std::vector<std::string> sentence_words) const = 0;
 
-    virtual std::vector<double> getFrequencies(std::unordered_map<int, double> term_freqs) const = 0;
+    virtual std::vector<double> getFrequencies(std::tr1::unordered_map<int, double> term_freqs) const = 0;
 
     /**
      * @brief Retrieves the word at the specified index.
@@ -123,7 +124,7 @@ public:
      * @param idx The index of the sentence.
      * @return Shared pointer to the sentence.
      */
-    std::shared_ptr<Sentence> getSentence(int idx) { return sentences[idx]; }
+    std::tr1::shared_ptr<Sentence> getSentence(int idx) { return sentences[idx]; }
 
     /**
      * @brief Retrieves the size of the word array.
@@ -162,13 +163,27 @@ public:
 
 protected:
     std::vector<std::string> word_array; /**< Array storing words. */
-    std::unordered_map<std::string, int> word_to_idx; /**< Map of words to their indices. */
-    std::vector<std::shared_ptr<Sentence>> sentences; /**< Vector storing sentences. */
-    std::unordered_map<std::string, int> histogram;
+    std::tr1::unordered_map<std::string, int> word_to_idx; /**< Map of words to their indices. */
+    std::vector<std::tr1::shared_ptr<Sentence> > sentences; /**< Vector storing sentences. */
+    std::tr1::unordered_map<std::string, int> histogram;
     int this_vectorizer_id;
     bool binary; /**< Flag indicating binary encoding. */
     bool case_sensitive; /**< Flag indicating case sensitivity. */
     bool include_stopwords; /**< Flag indicating inclusion of stop words. */
 };
+
+template <typename MapType>
+typename MapType::mapped_type getmapval(MapType& map, const typename MapType::key_type& key) {
+	MapType::const_iterator map_it = map.find(key);
+    if (map_it != map.end())
+    {
+		return map_it->second;
+    }
+	else
+	{
+		MapType::mapped_type val;
+		return val;
+	}
+}
 
 #endif // BASEVECTORIZER_H__

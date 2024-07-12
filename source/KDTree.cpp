@@ -20,24 +20,33 @@ void KDTree::build(const std::vector<std::vector<double>>& points, const std::ve
     root = buildTree(point_labels, 0);
 }
 
-KDNode* KDTree::buildTree(std::vector<std::pair<std::vector<double>, int>>& points, int depth)
+// Define a functor for comparison
+struct ComparePairs {
+    ComparePairs(int axis) : axis(axis) {}
+
+    bool operator()(const std::pair<std::vector<double>, int>& a, const std::pair<std::vector<double>, int>& b) const {
+        return a.first[axis] < b.first[axis];
+    }
+
+    int axis;
+};
+
+KDNode* KDTree::buildTree(std::vector<std::pair<std::vector<double>, int> >& points, int depth)
 {
     if (points.empty()) return nullptr;
 
     int axis = depth % dimension;
     size_t median = points.size() / 2;
-    std::nth_element(points.begin(), points.begin() + median, points.end(),
-                     [axis](const std::pair<std::vector<double>, int>& a, const std::pair<std::vector<double>, int>& b)
-                     {
-                         return a.first[axis] < b.first[axis];
-                     });
+
+    // Use the functor as the comparison
+    std::nth_element(points.begin(), points.begin() + median, points.end(), ComparePairs(axis));
 
     KDNode* node = new KDNode(points[median].first, points[median].second);
-    std::vector<std::pair<std::vector<double>, int>> left(points.begin(), points.begin() + median);
-    std::vector<std::pair<std::vector<double>, int>> right(points.begin() + median + 1, points.end());
+    std::vector<std::pair<std::vector<double>, int> > left(points.begin(), points.begin() + median);
+    std::vector<std::pair<std::vector<double>, int> > right(points.begin() + median + 1, points.end());
     node->left = buildTree(left, depth + 1);
     node->right = buildTree(right, depth + 1);
-    
+
     return node;
 }
 

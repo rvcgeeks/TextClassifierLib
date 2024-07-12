@@ -1,8 +1,21 @@
 
 #include "TfidfVectorizer.h"
+
 #include <cmath>
 
+int stoi(const std::string& str) {
+    std::istringstream iss(str);
+    int result;
+    iss >> result;
+    return result;
+}
+
 using namespace std;
+
+double log1p(double x)
+{
+	return log(1.0 + x);
+}
 
 // ================================================================|
 // ======================CONSTRUCTORS==============================|
@@ -33,13 +46,13 @@ TfidfVectorizer::~TfidfVectorizer()
 
 void TfidfVectorizer::fit(string abs_filepath_to_features, string abs_filepath_to_labels)
 {
-    ifstream in;
+    ifstream in, in1;
     string feature_output;
     string label_output;
     vector<string> features;
     vector<bool> labels;
 
-    in.open(abs_filepath_to_features);
+    in.open(abs_filepath_to_features.c_str());
 
     if (!in)
     {
@@ -53,19 +66,22 @@ void TfidfVectorizer::fit(string abs_filepath_to_features, string abs_filepath_t
     }
     in.close();
 
-    in.open(abs_filepath_to_labels);
+    in1.open(abs_filepath_to_labels.c_str());
 
-    if (!in)
+    if (!in1)
     {
         cout << "ERROR: Cannot open labels file.\n";
         return;
     }
 
-    while (getline(in, label_output))
+    while (getline(in1, label_output))
     {
-        labels.push_back((bool)stoi(label_output));
+		std::istringstream iss(label_output);
+		int label;
+		iss >> label;
+        labels.push_back(label);
     }
-    in.close();
+    in1.close();
 
     unsigned int feature_size = features.size();
     if (feature_size != labels.size())
@@ -91,17 +107,17 @@ void TfidfVectorizer::fit(string abs_filepath_to_features, string abs_filepath_t
     cout << endl;
 
     // Calculate IDF values
-    for (const auto& word_idx : word_to_idx)
+    for (tr1::unordered_map<string, int>::const_iterator word_idx = word_to_idx.begin(); word_idx != word_to_idx.end(); ++word_idx)
     {
         int doc_count = 0;
-        for (const auto& sentence : sentences)
+        for (vector<tr1::shared_ptr<Sentence> >::const_iterator sentence = sentences.begin(); sentence != sentences.end(); ++sentence)
         {
-            if (sentence->sentence_map.count(word_idx.second))
+            if ((*sentence)->sentence_map.count(word_idx->second))
             {
                 doc_count++;
             }
         }
-        idf_values[word_idx.second] = log1p(double(sentences.size()) / (1 + doc_count));
+        idf_values[word_idx->second] = log1p(double(sentences.size()) / (1 + doc_count));
     }
 }
 
@@ -111,8 +127,8 @@ void TfidfVectorizer::shape()
     unsigned int sentenceCount = getSentenceCount();
     cout << "------------------------------" << endl;
     cout << "Current TfidfVectorizer Shape:" << endl;
-    cout << "Total unique words: " << to_string(wordArraySize) << endl;
-    cout << "Documents in corpus: " << to_string(sentenceCount) << endl;
+    cout << "Total unique words: " << wordArraySize << endl;
+    cout << "Documents in corpus: " << sentenceCount << endl;
     cout << "------------------------------" << endl;
 }
 
@@ -128,9 +144,9 @@ void TfidfVectorizer::head()
     cout << "Current TfidfVectorizer Head:" << endl;
     for (unsigned int i = 0; i < wordArraySize; i++)
     {
-        for (auto sentence : sentences)
+        for (vector<tr1::shared_ptr<Sentence> >::const_iterator sentence = sentences.begin(); sentence != sentences.end(); ++sentence)
         {
-            if (is_wordInSentence(*sentence, i))
+            if (is_wordInSentence(**sentence, i))
             {
                 count++;
             }
@@ -152,29 +168,29 @@ int TfidfVectorizer::is_wordInSentence(Sentence sentence_, unsigned int idx)
 
 void TfidfVectorizer::pushSentenceToWordArray(vector<string> new_sentence_vector)
 {
-    for (const string& word : new_sentence_vector)
+    for (vector<string>::const_iterator word = new_sentence_vector.begin(); word != new_sentence_vector.end(); ++word)
     {
-        if (!ContainsWord(word) && !histogram.count(word))
+        if (!ContainsWord(*word) && !histogram.count(*word))
         {
-            word_array.push_back(word);
-            word_to_idx[word] = word_array.size() - 1;
+            word_array.push_back(*word);
+            word_to_idx[*word] = word_array.size() - 1;
         }
     }
 }
 
-shared_ptr<Sentence> TfidfVectorizer::createSentenceObject(vector<string> new_sentence_vector, bool label_)
+tr1::shared_ptr<Sentence> TfidfVectorizer::createSentenceObject(vector<string> new_sentence_vector, bool label_)
 {
-    shared_ptr<Sentence> new_sentence(new Sentence);
-    unordered_map<int, int> term_freqs;
+    tr1::shared_ptr<Sentence> new_sentence(new Sentence);
+    tr1::unordered_map<int, int> term_freqs;
 
-    for (const auto& word : new_sentence_vector)
+    for (vector<string>::const_iterator word = new_sentence_vector.begin(); word != new_sentence_vector.end(); ++word)
     {
-        if (histogram.count(word))
+        if (histogram.count(*word))
         {
             continue;
         }
 
-        int idx = word_to_idx[word];
+        int idx = word_to_idx[*word];
         if (term_freqs.count(idx))
         {
             term_freqs[idx]++;
@@ -185,9 +201,9 @@ shared_ptr<Sentence> TfidfVectorizer::createSentenceObject(vector<string> new_se
         }
     }
 
-    for (const auto& entry : term_freqs)
+    for (tr1::unordered_map<int, int>::const_iterator entry = term_freqs.begin(); entry != term_freqs.end(); ++entry)
     {
-        new_sentence->sentence_map[entry.first] = entry.second;
+        new_sentence->sentence_map[entry->first] = entry->second;
     }
 
     new_sentence->label = label_;
@@ -199,7 +215,7 @@ void TfidfVectorizer::addSentence(string new_sentence, bool label_)
     vector<string> processedString;
     processedString = buildSentenceVector(new_sentence);
     pushSentenceToWordArray(processedString);
-    shared_ptr<Sentence> sentObj = createSentenceObject(processedString, label_);
+    tr1::shared_ptr<Sentence> sentObj = createSentenceObject(processedString, label_);
     sentences.push_back(sentObj);
 }
 
@@ -208,80 +224,62 @@ bool TfidfVectorizer::ContainsWord(const string& word_to_check)
     return word_to_idx.count(word_to_check) > 0;
 }
 
-std::vector<double> TfidfVectorizer::getFrequencies(std::unordered_map<int, double> term_freqs) const
+vector<double> TfidfVectorizer::getFrequencies(tr1::unordered_map<int, double> term_freqs) const
 {
-    std::vector<double> sentence_features(word_array.size(), 0.0);
-    for (const auto& entry : term_freqs)
+    vector<double> sentence_features(word_array.size(), 0.0);
+    for (tr1::unordered_map<int, double>::const_iterator entry = term_freqs.begin(); entry != term_freqs.end(); ++entry)
     {
-        int term_idx = entry.first;
-        int term_freq = entry.second;
+        int term_idx = entry->first;
+        int term_freq = entry->second;
         double tf = term_freq;
-        double idf = idf_values.at(term_idx);
+        double idf = getmapval(idf_values, term_idx);
         sentence_features[term_idx] = tf * idf;
-        //cout << sentence_features[term_idx] << " ";
     }
-    //cout << endl;
     return sentence_features;
 }
 
-std::vector<double> TfidfVectorizer::getSentenceFeatures(std::vector<std::string> sentence_words) const
+vector<double> TfidfVectorizer::getSentenceFeatures(vector<string> sentence_words) const
 {
-    std::vector<double> sentence_features(word_array.size(), 0.0);
-    unordered_map<int, int> term_freqs;
+    vector<double> sentence_features(word_array.size(), 0.0);
+    tr1::unordered_map<int, int> term_freqs;
 
-    for (const std::string& word : sentence_words)
+    for (vector<string>::const_iterator word = sentence_words.begin(); word != sentence_words.end(); ++word)
     {
-        if (word_to_idx.count(word) > 0)
+        if (word_to_idx.count(*word) > 0)
         {
-            int idx = word_to_idx.at(word);
+            int idx = getmapval(word_to_idx, *word);
             term_freqs[idx]++;
         }
     }
 
-    for (const auto& entry : term_freqs)
+    for (tr1::unordered_map<int, int>::const_iterator entry = term_freqs.begin(); entry != term_freqs.end(); ++entry)
     {
-        int term_idx = entry.first;
-        int term_freq = entry.second;
+        int term_idx = entry->first;
+        int term_freq = entry->second;
         double tf = term_freq;
-        double idf = idf_values.at(term_idx);
+        double idf = getmapval(idf_values, term_idx);
         sentence_features[term_idx] = tf * idf;
     }
     return sentence_features;
 }
 
-void TfidfVectorizer::save(std::ofstream& outFile) const
+void TfidfVectorizer::save(ofstream& outFile) const
 {
     size_t word_array_size = word_array.size();
     outFile.write(reinterpret_cast<const char*>(&word_array_size), sizeof(word_array_size));
-    for (const auto& word : word_array)
+    for (vector<string>::const_iterator word = word_array.begin(); word != word_array.end(); ++word)
     {
-        size_t word_size = word.size();
+        size_t word_size = word->size();
         outFile.write(reinterpret_cast<const char*>(&word_size), sizeof(word_size));
-        outFile.write(word.data(), word_size);
+        outFile.write(word->data(), word_size);
     }
-
-    /*
-    size_t sentence_size = sentences.size();
-    outFile.write(reinterpret_cast<const char*>(&sentence_size), sizeof(sentence_size));
-    for (const auto& sentence : sentences)
-    {
-        size_t map_size = sentence->sentence_map.size();
-        outFile.write(reinterpret_cast<const char*>(&map_size), sizeof(map_size));
-        for (const auto& entry : sentence->sentence_map)
-        {
-            outFile.write(reinterpret_cast<const char*>(&entry.first), sizeof(entry.first));
-            outFile.write(reinterpret_cast<const char*>(&entry.second), sizeof(entry.second));
-        }
-        outFile.write(reinterpret_cast<const char*>(&sentence->label), sizeof(sentence->label));
-    }
-    */
 
     size_t idf_size = idf_values.size();
     outFile.write(reinterpret_cast<const char*>(&idf_size), sizeof(idf_size));
-    for (const auto& entry : idf_values)
+    for (tr1::unordered_map<int, double>::const_iterator entry = idf_values.begin(); entry != idf_values.end(); ++entry)
     {
-        outFile.write(reinterpret_cast<const char*>(&entry.first), sizeof(entry.first));
-        outFile.write(reinterpret_cast<const char*>(&entry.second), sizeof(entry.second));
+        outFile.write(reinterpret_cast<const char*>(&entry->first), sizeof(entry->first));
+        outFile.write(reinterpret_cast<const char*>(&entry->second), sizeof(entry->second));
     }
 
     outFile.write(reinterpret_cast<const char*>(&binary), sizeof(binary));
@@ -289,7 +287,7 @@ void TfidfVectorizer::save(std::ofstream& outFile) const
     outFile.write(reinterpret_cast<const char*>(&include_stopwords), sizeof(include_stopwords));
 }
 
-void TfidfVectorizer::load(std::ifstream& inFile)
+void TfidfVectorizer::load(ifstream& inFile)
 {
     word_array.clear();
     word_to_idx.clear();
@@ -307,28 +305,6 @@ void TfidfVectorizer::load(std::ifstream& inFile)
         inFile.read(&word_array[i][0], word_size);
         word_to_idx[word_array[i]] = i;
     }
-
-    /*
-    size_t sentence_size;
-    inFile.read(reinterpret_cast<char*>(&sentence_size), sizeof(sentence_size));
-    sentences.resize(sentence_size);
-    for (size_t i = 0; i < sentence_size; ++i)
-    {
-        auto sentence = make_shared<Sentence>();
-        size_t map_size;
-        inFile.read(reinterpret_cast<char*>(&map_size), sizeof(map_size));
-        for (size_t j = 0; j < map_size; ++j)
-        {
-            int key;
-            double value;
-            inFile.read(reinterpret_cast<char*>(&key), sizeof(key));
-            inFile.read(reinterpret_cast<char*>(&value), sizeof(value));
-            sentence->sentence_map[key] = value;
-        }
-        inFile.read(reinterpret_cast<char*>(&sentence->label), sizeof(sentence->label));
-        sentences[i] = sentence;
-    }
-    */
 
     size_t idf_size;
     inFile.read(reinterpret_cast<char*>(&idf_size), sizeof(idf_size));

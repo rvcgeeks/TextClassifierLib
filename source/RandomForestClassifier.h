@@ -71,7 +71,7 @@ public:
 private:
     int num_trees; /**< Number of decision trees in the random forest. */
     int max_depth; /**< Maximum depth of each decision tree. */
-    std::vector<std::shared_ptr<DecisionTree>> trees; /**< Vector of decision trees in the random forest. */
+	std::vector<std::tr1::shared_ptr<DecisionTree>> trees; /**< Vector of decision trees in the random forest. */
 };
 
 #endif // RANDOMFORESTCLASSIFIER_H__

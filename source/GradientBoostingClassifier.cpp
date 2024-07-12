@@ -3,8 +3,12 @@
 
 #include <fstream>
 #include <iostream>
+#include <cmath>
+#include <memory> // Include for std::tr1::shared_ptr
+#include <unordered_map> // Include for std::tr1::unordered_map
 
 GradientBoostingClassifier::GradientBoostingClassifier(BaseVectorizer* pvec)
+    : n_trees(50), max_depth(5), learning_rate(0.01)
 {
 	pVec = pvec;
 }
@@ -12,22 +16,6 @@ GradientBoostingClassifier::GradientBoostingClassifier(BaseVectorizer* pvec)
 GradientBoostingClassifier::~GradientBoostingClassifier()
 {
     delete pVec;
-}
-
-double GradientBoostingClassifier::predict_tree(const DecisionTree& tree, const std::vector<double>& features) const
-{
-    return tree.predict(features).label;
-}
-
-double GradientBoostingClassifier::predict_proba(const std::vector<double>& features) const
-{
-    double score = 0.0;
-    for (size_t i = 0; i < trees.size(); ++i)
-    {
-        double tree_prediction = predict_tree(*trees[i], features);
-        score += learning_rate * tree_prediction;
-    }
-    return 1.0 / (1.0 + exp(-score));
 }
 
 void GradientBoostingClassifier::setHyperparameters(std::string hyperparameters)
@@ -46,7 +34,7 @@ void GradientBoostingClassifier::setHyperparameters(std::string hyperparameters)
         double value;
 
         if (std::getline(pairStream, key, '=') && pairStream >> value) {
-            cout << key << " = " << value << endl;
+            std::cout << key << " = " << value << std::endl;
             if (key == "minfrequency") {
                 minfrequency = value;
             }
@@ -74,10 +62,10 @@ void GradientBoostingClassifier::fit(std::string abs_filepath_to_features, std::
     size_t num_features = pVec->word_array.size();
     trees.clear();
 
-    std::vector<std::shared_ptr<Sentence>> sentences = pVec->sentences;
+    std::vector<std::tr1::shared_ptr<Sentence>> sentences = pVec->sentences;
     std::vector<double> labels(sentences.size());
 
-    std::ifstream label_file(abs_filepath_to_labels);
+    std::ifstream label_file(abs_filepath_to_labels.c_str());
     std::string label;
     for (size_t i = 0; i < labels.size(); ++i)
     {
@@ -92,16 +80,16 @@ void GradientBoostingClassifier::fit(std::string abs_filepath_to_features, std::
         for (size_t j = 0; j < sentences.size(); ++j)
         {
             std::vector<double> features;
-            const auto& sentence_map = sentences[j]->sentence_map;
+            const std::tr1::unordered_map<int, double>& sentence_map = sentences[j]->sentence_map;
             features = pVec->getFrequencies(sentence_map);
             double y_true = labels[j];
             double y_pred = predict_proba(features);
             residuals[j] = y_true - y_pred;
         }
 
-        auto tree = std::make_unique<DecisionTree>(max_depth);
+        std::tr1::shared_ptr<DecisionTree> tree(new DecisionTree(max_depth));
         tree->fit(sentences);
-        trees.push_back(std::move(tree));
+        trees.push_back(tree);
     }
 }
 
@@ -129,8 +117,8 @@ Prediction GradientBoostingClassifier::predict(std::string sentence, bool prepro
 
 void GradientBoostingClassifier::predict(std::string abs_filepath_to_features, std::string abs_filepath_to_labels, bool preprocess)
 {
-    std::ifstream in(abs_filepath_to_features);
-    std::ofstream out(abs_filepath_to_labels);
+    std::ifstream in(abs_filepath_to_features.c_str());
+    std::ofstream out(abs_filepath_to_labels.c_str());
     std::string feature_input;
 
     if (!in)
@@ -146,6 +134,7 @@ void GradientBoostingClassifier::predict(std::string abs_filepath_to_features, s
     }
 
     #ifdef BENCHMARK
+    clock_t start;
     double sumduration = 0.0;
     double sumstrlen = 0.0;
     size_t num_rows = 0;
@@ -154,16 +143,13 @@ void GradientBoostingClassifier::predict(std::string abs_filepath_to_features, s
     while (getline(in, feature_input))
     {
         #ifdef BENCHMARK
-        auto start = std::chrono::high_resolution_clock::now();
+        start = clock();
         #endif
 
         Prediction result = predict(feature_input, preprocess);
 
         #ifdef BENCHMARK
-        auto end = std::chrono::high_resolution_clock::now();
-        std::chrono::duration<double, std::milli> duration = end - start;
-        double milliseconds = duration.count();
-        sumduration += milliseconds;
+        sumduration += static_cast<double>(clock() - start) / CLOCKS_PER_SEC * 1000.0;
         sumstrlen += feature_input.length();
         num_rows++;
         #endif
@@ -173,18 +159,34 @@ void GradientBoostingClassifier::predict(std::string abs_filepath_to_features, s
 
     #ifdef BENCHMARK
     double avgduration = sumduration / num_rows;
-    cout << "Average Time per Text = " << avgduration << " ms" << endl;
+    std::cout << "Average Time per Text = " << avgduration << " ms" << std::endl;
     double avgstrlen = sumstrlen / num_rows;
-    cout << "Average Length of Text (chars) = " << avgstrlen << endl;
+    std::cout << "Average Length of Text (chars) = " << avgstrlen << std::endl;
     #endif
 
     in.close();
     out.close();
 }
 
+double GradientBoostingClassifier::predict_tree(const DecisionTree& tree, const std::vector<double>& features) const
+{
+    return tree.predict(features).label;
+}
+
+double GradientBoostingClassifier::predict_proba(const std::vector<double>& features) const
+{
+    double score = 0.0;
+    for (size_t i = 0; i < trees.size(); ++i)
+    {
+        double tree_prediction = predict_tree(*trees[i], features);
+        score += learning_rate * tree_prediction;
+    }
+    return 1.0 / (1.0 + exp(-score));
+}
+
 void GradientBoostingClassifier::save(const std::string& filename) const
 {
-    std::ofstream outFile(filename, std::ios::binary);
+    std::ofstream outFile(filename.c_str(), std::ios::binary);
     if (!outFile.is_open())
     {
         std::cerr << "Failed to open file for writing." << std::endl;
@@ -196,9 +198,9 @@ void GradientBoostingClassifier::save(const std::string& filename) const
     size_t tree_count = trees.size();
     outFile.write(reinterpret_cast<const char*>(&tree_count), sizeof(tree_count));
 
-    for (const auto& tree : trees)
+    for (size_t i = 0; i < tree_count; ++i)
     {
-        tree->save(outFile);
+        trees[i]->save(outFile);
     }
 
     outFile.write(reinterpret_cast<const char*>(&n_trees), sizeof(n_trees));
@@ -210,7 +212,7 @@ void GradientBoostingClassifier::save(const std::string& filename) const
 
 void GradientBoostingClassifier::load(const std::string& filename)
 {
-    std::ifstream inFile(filename, std::ios::binary);
+    std::ifstream inFile(filename.c_str(), std::ios::binary);
     if (!inFile.is_open())
     {
         std::cerr << "Failed to open file for reading." << std::endl;
@@ -224,9 +226,8 @@ void GradientBoostingClassifier::load(const std::string& filename)
     trees.resize(tree_count);
     for (size_t i = 0; i < tree_count; ++i)
     {
-        auto tree = std::make_unique<DecisionTree>(max_depth);
-        tree->load(inFile);
-        trees[i] = std::move(tree);
+        trees[i].reset(new DecisionTree(max_depth));
+        trees[i]->load(inFile);
     }
 
     inFile.read(reinterpret_cast<char*>(&n_trees), sizeof(n_trees));

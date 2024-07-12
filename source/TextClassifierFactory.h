@@ -36,7 +36,7 @@ public:
     /**
      * @brief Typedef for the product of the factory, which is a shared pointer to BaseClassifier.
      */
-    typedef shared_ptr<BaseClassifier> Product;
+	typedef std::tr1::shared_ptr<BaseClassifier> Product;
 
     /**
      * @brief Creates a text classifier based on the given vectorizer and classifier IDs.
@@ -47,5 +47,10 @@ public:
      */
     Product getTextClassifier(int vectorizer_id, int classifier_id);
 };
+
+template<typename T, typename Arg1>
+std::tr1::shared_ptr<T> make_shared(Arg1 arg1) {
+    return std::tr1::shared_ptr<T>(new T(arg1));
+}
 
 #endif // TEXTCLASSIFIERFACTORY_H__

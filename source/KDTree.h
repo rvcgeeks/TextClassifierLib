@@ -15,6 +15,9 @@
 /**
  * @brief Node structure for KDTree.
  */
+
+#define nullptr NULL
+
 struct KDNode
 {
     std::vector<double> point; /**< Data point coordinates. */

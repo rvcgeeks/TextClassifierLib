@@ -3,6 +3,9 @@
 
 #include <fstream>
 #include <iostream>
+#include <sstream>
+#include <cmath>
+#include <unordered_map>  // TR1 unordered_map
 
 LogisticRegressionClassifier::LogisticRegressionClassifier(BaseVectorizer* pvec)
 {
@@ -42,7 +45,7 @@ void LogisticRegressionClassifier::setHyperparameters(std::string hyperparameter
         double value;
 
         if (std::getline(pairStream, key, '=') && pairStream >> value) {
-            cout << key << " = " << value << endl;
+            std::cout << key << " = " << value << std::endl;
             if (key == "minfrequency") {
                 minfrequency = value;
             }
@@ -50,7 +53,7 @@ void LogisticRegressionClassifier::setHyperparameters(std::string hyperparameter
                 bias = value;
             }
             else if (key == "epochs") {
-                epochs = value;
+                epochs = static_cast<int>(value);  // Ensure integer conversion
             }
             else if (key == "learning_rate") {
                 learning_rate = value;
@@ -76,10 +79,10 @@ void LogisticRegressionClassifier::fit(std::string abs_filepath_to_features, std
     size_t num_features = pVec->word_array.size();
     weights.assign(num_features, 0.0);
 
-    std::vector<std::shared_ptr<Sentence>> sentences = pVec->sentences;
+	std::vector<std::tr1::shared_ptr<Sentence> > sentences = pVec->sentences;
     std::vector<int> labels(sentences.size());
 
-    std::ifstream label_file(abs_filepath_to_labels);
+    std::ifstream label_file(abs_filepath_to_labels.c_str());
     if (!label_file.is_open()) {
         throw std::runtime_error("Unable to open label file");
     }
@@ -95,7 +98,7 @@ void LogisticRegressionClassifier::fit(std::string abs_filepath_to_features, std
         for (size_t i = 0; i < sentences.size(); ++i)
         {
             std::vector<double> features;
-            const auto& sentence_map = sentences[i]->sentence_map;
+            const std::tr1::unordered_map<int, double>& sentence_map = sentences[i]->sentence_map;
             features = pVec->getFrequencies(sentence_map);
             double y_true = labels[i];
             double y_false;
@@ -133,10 +136,10 @@ Prediction LogisticRegressionClassifier::predict(std::string sentence, bool prep
 {
     GlobalData vars;
     Prediction result;
-    std::vector<string> processed_input = pVec->buildSentenceVector(sentence, preprocess);
+    std::vector<std::string> processed_input = pVec->buildSentenceVector(sentence, preprocess);
     std::vector<double> feature_vector = pVec->getSentenceFeatures(processed_input);
     double probability = predict_proba(feature_vector);
-    
+
     result.probability = probability;
 
     if (probability > 0.5)
@@ -153,8 +156,8 @@ Prediction LogisticRegressionClassifier::predict(std::string sentence, bool prep
 
 void LogisticRegressionClassifier::predict(std::string abs_filepath_to_features, std::string abs_filepath_to_labels, bool preprocess)
 {
-    std::ifstream in(abs_filepath_to_features);
-    std::ofstream out(abs_filepath_to_labels);
+    std::ifstream in(abs_filepath_to_features.c_str());
+    std::ofstream out(abs_filepath_to_labels.c_str());
     std::string feature_input;
 
     if (!in)
@@ -170,6 +173,7 @@ void LogisticRegressionClassifier::predict(std::string abs_filepath_to_features,
     }
 
     #ifdef BENCHMARK
+    clock_t start;
     double sumduration = 0.0;
     double sumstrlen = 0.0;
     size_t num_rows = 0;
@@ -178,16 +182,13 @@ void LogisticRegressionClassifier::predict(std::string abs_filepath_to_features,
     while (getline(in, feature_input))
     {
         #ifdef BENCHMARK
-        auto start = std::chrono::high_resolution_clock::now();
+        start = clock();
         #endif
 
         Prediction result = predict(feature_input, preprocess);
 
         #ifdef BENCHMARK
-        auto end = std::chrono::high_resolution_clock::now();
-        std::chrono::duration<double, std::milli> duration = end - start;
-        double milliseconds = duration.count();
-        sumduration += milliseconds;
+        sumduration += static_cast<double>(clock() - start) / CLOCKS_PER_SEC * 1000.0;
         sumstrlen += feature_input.length();
         num_rows++;
         #endif
@@ -197,9 +198,9 @@ void LogisticRegressionClassifier::predict(std::string abs_filepath_to_features,
 
     #ifdef BENCHMARK
     double avgduration = sumduration / num_rows;
-    cout << "Average Time per Text = " << avgduration << " ms" << endl;
+    std::cout << "Average Time per Text = " << avgduration << " ms" << std::endl;
     double avgstrlen = sumstrlen / num_rows;
-    cout << "Average Length of Text (chars) = " << avgstrlen << endl;
+    std::cout << "Average Length of Text (chars) = " << avgstrlen << std::endl;
     #endif
 
     in.close();
@@ -208,7 +209,7 @@ void LogisticRegressionClassifier::predict(std::string abs_filepath_to_features,
 
 void LogisticRegressionClassifier::save(const std::string& filename) const
 {
-    std::ofstream outFile(filename, std::ios::binary);
+    std::ofstream outFile(filename.c_str(), std::ios::binary);
     if (!outFile.is_open())
     {
         std::cerr << "Failed to open file for writing." << std::endl;
@@ -219,7 +220,7 @@ void LogisticRegressionClassifier::save(const std::string& filename) const
 
     size_t weight_size = weights.size();
     outFile.write(reinterpret_cast<const char*>(&weight_size), sizeof(weight_size));
-    outFile.write(reinterpret_cast<const char*>(weights.data()), weight_size * sizeof(double));
+    outFile.write(reinterpret_cast<const char*>(&weights[0]), weight_size * sizeof(double));
     outFile.write(reinterpret_cast<const char*>(&bias), sizeof(bias));
 
     outFile.close();
@@ -227,7 +228,7 @@ void LogisticRegressionClassifier::save(const std::string& filename) const
 
 void LogisticRegressionClassifier::load(const std::string& filename)
 {
-    std::ifstream inFile(filename, std::ios::binary);
+    std::ifstream inFile(filename.c_str(), std::ios::binary);
     if (!inFile.is_open())
     {
         std::cerr << "Failed to open file for reading." << std::endl;
@@ -239,7 +240,7 @@ void LogisticRegressionClassifier::load(const std::string& filename)
     size_t weight_size;
     inFile.read(reinterpret_cast<char*>(&weight_size), sizeof(weight_size));
     weights.resize(weight_size);
-    inFile.read(reinterpret_cast<char*>(weights.data()), weight_size * sizeof(double));
+    inFile.read(reinterpret_cast<char*>(&weights[0]), weight_size * sizeof(double));
     inFile.read(reinterpret_cast<char*>(&bias), sizeof(bias));
 
     inFile.close();

@@ -49,13 +49,13 @@ CountVectorizer::~CountVectorizer()
  */
 void CountVectorizer::fit(string abs_filepath_to_features, string abs_filepath_to_labels)
 {
-    ifstream in;
+    ifstream in, in1;
     string feature_output;
     string label_output;
     vector<string> features;
     vector<bool> labels;
 
-    in.open(abs_filepath_to_features);
+    in.open(abs_filepath_to_features.c_str());
 
     if (!in)
     {
@@ -69,19 +69,22 @@ void CountVectorizer::fit(string abs_filepath_to_features, string abs_filepath_t
     }
     in.close();
 
-    in.open(abs_filepath_to_labels);
+    in1.open(abs_filepath_to_labels.c_str());
 
-    if (!in)
+    if (!in1)
     {
         cout << "ERROR: Cannot open labels file.\n";
         return;
     }
 
-    while (getline(in, label_output))
+    while (getline(in1, label_output))
     {
-        labels.push_back((bool)std::stoi(label_output));
+		std::istringstream iss(label_output);
+		int label;
+		iss >> label;
+        labels.push_back(label);
     }
-    in.close();
+    in1.close();
 
     unsigned int feature_size = features.size();
     if (feature_size != labels.size())
@@ -91,17 +94,17 @@ void CountVectorizer::fit(string abs_filepath_to_features, string abs_filepath_t
     }
 
     cout << "Fitting CountVectorizer..." << endl;
-    int perc, prevperc;
+    int perc = 0, prevperc = -1;
 
     for (unsigned int i = 0; i < feature_size; i++)
     {
         addSentence(features[i], labels[i]);
 
-        prevperc = perc;
         perc = int(float(i) / feature_size * 100);
         if (prevperc != perc)
         {
             cout << perc << " % done" << endl;
+            prevperc = perc;
         }
     }
     cout << endl;
@@ -116,8 +119,8 @@ void CountVectorizer::shape()
     unsigned int sentenceCount = getSentenceCount();
     cout << "------------------------------" << endl;
     cout << "Current CountVectorizer Shape:" << endl;
-    cout << "Total unique words: " << to_string(wordArraySize) << endl;
-    cout << "Documents in corpus: " << to_string(sentenceCount) << endl;
+    cout << "Total unique words: " << wordArraySize << endl;
+    cout << "Documents in corpus: " << sentenceCount << endl;
     cout << "------------------------------" << endl;
 }
 
@@ -136,9 +139,9 @@ void CountVectorizer::head()
     cout << "Current CountVectorizer Head:" << endl;
     for (unsigned int i = 0; i < wordArraySize; i++)
     {
-        for (auto sentence : sentences)
+        for (vector< std::tr1::shared_ptr<Sentence> >::const_iterator it = sentences.begin(); it != sentences.end(); ++it)
         {
-            if (is_wordInSentence(*sentence, i))
+            if (is_wordInSentence(**it, i))
             {
                 count++;
             }
@@ -172,12 +175,12 @@ int CountVectorizer::is_wordInSentence(Sentence sentence_, unsigned int idx)
  */
 void CountVectorizer::pushSentenceToWordArray(vector<string> new_sentence_vector)
 {
-    for (const string& word : new_sentence_vector)
+    for (vector<string>::const_iterator it = new_sentence_vector.begin(); it != new_sentence_vector.end(); ++it)
     {
-        if (!ContainsWord(word) && !histogram.count(word))
+        if (!ContainsWord(*it) && !histogram.count(*it))
         {
-            word_array.push_back(word);
-            word_to_idx[word] = word_array.size() - 1;
+            word_array.push_back(*it);
+            word_to_idx[*it] = word_array.size() - 1;
         }
     }
 }
@@ -189,17 +192,17 @@ void CountVectorizer::pushSentenceToWordArray(vector<string> new_sentence_vector
  * @param label_ Boolean label for the sentence.
  * @return Shared pointer to the created Sentence object.
  */
-shared_ptr<Sentence> CountVectorizer::createSentenceObject(vector<string> new_sentence_vector, bool label_)
+std::tr1::shared_ptr<Sentence> CountVectorizer::createSentenceObject(vector<string> new_sentence_vector, bool label_)
 {
-    shared_ptr<Sentence> new_sentence(new Sentence);
-    for (const auto& word : new_sentence_vector)
+    std::tr1::shared_ptr<Sentence> new_sentence(new Sentence);
+    for (vector<string>::const_iterator it = new_sentence_vector.begin(); it != new_sentence_vector.end(); ++it)
     {
-        if (histogram.count(word))
+        if (histogram.count(*it))
         {
             continue;
         }
 
-        int idx = word_to_idx[word];
+        int idx = word_to_idx[*it];
         if (new_sentence->sentence_map.count(idx))
         {
             new_sentence->sentence_map[idx]++;
@@ -211,9 +214,9 @@ shared_ptr<Sentence> CountVectorizer::createSentenceObject(vector<string> new_se
     }
     if (binary)
     {
-        for (auto& entry : new_sentence->sentence_map)
+        for (tr1::unordered_map<int, double>::iterator it = new_sentence->sentence_map.begin(); it != new_sentence->sentence_map.end(); ++it)
         {
-            entry.second = 1.0;
+            it->second = 1.0;
         }
     }
     new_sentence->label = label_;
@@ -231,7 +234,7 @@ void CountVectorizer::addSentence(string new_sentence, bool label_)
     vector<string> processedString;
     processedString = buildSentenceVector(new_sentence);
     pushSentenceToWordArray(processedString);
-    shared_ptr<Sentence> sentObj = createSentenceObject(processedString, label_);
+    std::tr1::shared_ptr<Sentence> sentObj = createSentenceObject(processedString, label_);
     sentences.push_back(sentObj);
 }
 
@@ -255,24 +258,24 @@ bool CountVectorizer::ContainsWord(const string& word_to_check)
 std::vector<double> CountVectorizer::getSentenceFeatures(std::vector<std::string> sentence_words) const
 {
     std::vector<double> sentence_features(word_array.size(), 0.0);
-    for (const std::string& word : sentence_words)
+    for (std::vector<std::string>::const_iterator it = sentence_words.begin(); it != sentence_words.end(); ++it)
     {
-        if (word_to_idx.count(word) > 0)
+        if (word_to_idx.count(*it) > 0)
         {
-            int idx = word_to_idx.at(word);
+            int idx = getmapval(word_to_idx, *it);
             sentence_features[idx]++;
         }
     }
     return sentence_features;
 }
 
-std::vector<double> CountVectorizer::getFrequencies(std::unordered_map<int, double> term_freqs) const
+std::vector<double> CountVectorizer::getFrequencies(std::tr1::unordered_map<int, double> term_freqs) const
 {
     std::vector<double> sentence_features(word_array.size(), 0.0);
-    for (const auto& entry : term_freqs)
+    for (std::tr1::unordered_map<int, double>::const_iterator it = term_freqs.begin(); it != term_freqs.end(); ++it)
     {
-        int term_idx = entry.first;
-        int term_freq = entry.second;
+        int term_idx = it->first;
+        int term_freq = it->second;
         double tf = term_freq;
         sentence_features[term_idx] = tf;
     }
@@ -288,26 +291,26 @@ void CountVectorizer::save(std::ofstream& outFile) const
 {
     size_t word_array_size = word_array.size();
     outFile.write(reinterpret_cast<const char*>(&word_array_size), sizeof(word_array_size));
-    for (const auto& word : word_array)
+    for (std::vector<std::string>::const_iterator it = word_array.begin(); it != word_array.end(); ++it)
     {
-        size_t word_size = word.size();
+        size_t word_size = it->size();
         outFile.write(reinterpret_cast<const char*>(&word_size), sizeof(word_size));
-        outFile.write(word.data(), word_size);
+        outFile.write(it->data(), word_size);
     }
 
     /*
     size_t sentence_size = sentences.size();
     outFile.write(reinterpret_cast<const char*>(&sentence_size), sizeof(sentence_size));
-    for (const auto& sentence : sentences)
+    for (std::vector< std::tr1::shared_ptr<Sentence> >::const_iterator it = sentences.begin(); it != sentences.end(); ++it)
     {
-        size_t map_size = sentence->sentence_map.size();
+        size_t map_size = (*it)->sentence_map.size();
         outFile.write(reinterpret_cast<const char*>(&map_size), sizeof(map_size));
-        for (const auto& entry : sentence->sentence_map)
+        for (tr1::unordered_map<int, double>::const_iterator map_it = (*it)->sentence_map.begin(); map_it != (*it)->sentence_map.end(); ++map_it)
         {
-            outFile.write(reinterpret_cast<const char*>(&entry.first), sizeof(entry.first));
-            outFile.write(reinterpret_cast<const char*>(&entry.second), sizeof(entry.second));
+            outFile.write(reinterpret_cast<const char*>(&map_it->first), sizeof(map_it->first));
+            outFile.write(reinterpret_cast<const char*>(&map_it->second), sizeof(map_it->second));
         }
-        outFile.write(reinterpret_cast<const char*>(&sentence->label), sizeof(sentence->label));
+        outFile.write(reinterpret_cast<const char*>(&(*it)->label), sizeof((*it)->label));
     }
     */
 
@@ -345,7 +348,7 @@ void CountVectorizer::load(std::ifstream& inFile)
     sentences.resize(sentence_size);
     for (size_t i = 0; i < sentence_size; ++i)
     {
-        auto sentence = make_shared<Sentence>();
+        std::tr1::shared_ptr<Sentence> sentence(new Sentence);
         size_t map_size;
         inFile.read(reinterpret_cast<char*>(&map_size), sizeof(map_size));
         for (size_t j = 0; j < map_size; ++j)

@@ -2,22 +2,21 @@
 #include <iostream>
 #include <string>
 #include <algorithm>
+#include <cctype> // for isalnum, isspace, ispunct, tolower
 
 #include "BaseVectorizer.h"
 
 std::string preprocess_text(const std::string& text) {
-    
-    std::string processed = text; //.substr(0, MAX_TEXT_LEN);
+    std::string processed = text; // .substr(0, MAX_TEXT_LEN);
 
     std::replace(processed.begin(), processed.end(), '\n', ' ');
 
-    std::string filtered;
-    for (char c : processed) {
+    std::string filtered = "";
+    for (std::string::const_iterator it = processed.begin(); it != processed.end(); ++it) {
+        char c = *it;
         if (std::isalnum(c) || std::isspace(c) || std::ispunct(c)) {
             filtered += std::tolower(c);
-        }
-        else
-        {
+        } else {
             filtered += ' ';
         }
     }
@@ -31,19 +30,20 @@ std::string preprocess_text(const std::string& text) {
  * @param sentence_ The sentence to split.
  * @return Vector of words.
  */
-vector<string> BaseVectorizer::buildSentenceVector(string sentence_, bool preprocess)
+std::vector<std::string> BaseVectorizer::buildSentenceVector(std::string sentence_, bool preprocess)
 {
     GlobalData vars;
-    string new_word = "";
-    vector<string> ret;
+    std::string new_word = "";
+    std::vector<std::string> ret;
 
     if (true == preprocess)
     {
         sentence_ = preprocess_text(sentence_);
     }
 
-    for (char x : sentence_)
+    for (std::string::iterator it = sentence_.begin(); it != sentence_.end(); ++it)
     {
+        char x = *it;
         if (isupper(x) && !case_sensitive)
         {
             x = tolower(x);
@@ -78,12 +78,12 @@ vector<string> BaseVectorizer::buildSentenceVector(string sentence_, bool prepro
         ret.push_back(new_word);
     }
 
-    vector<string> fixed_ret;
-    for (const auto& s : ret)
+    std::vector<std::string> fixed_ret;
+    for (std::vector<std::string>::const_iterator it = ret.begin(); it != ret.end(); ++it)
     {
-        if (!s.empty())
+        if (!it->empty())
         {
-            fixed_ret.push_back(s);
+            fixed_ret.push_back(*it);
         }
     }
     return fixed_ret;
@@ -91,23 +91,24 @@ vector<string> BaseVectorizer::buildSentenceVector(string sentence_, bool prepro
 
 void BaseVectorizer::scanForSparseHistogram(std::string abs_filepath_to_features, int minfrequency)
 {
-    ifstream in;
-    string feature;
-    vector<string> features;
+    std::ifstream in;
+    std::string feature;
+    std::vector<std::string> features;
 
-    in.open(abs_filepath_to_features);
+    in.open(abs_filepath_to_features.c_str());
 
     if (!in)
     {
-        cout << "ERROR: Cannot open features file.\n";
+        std::cout << "ERROR: Cannot open features file.\n";
         return;
     }
 
-    while (getline(in, feature))
+    while (std::getline(in, feature))
     {
         features = buildSentenceVector(feature);
-        for (const auto& x : features)
+        for (std::vector<std::string>::const_iterator it = features.begin(); it != features.end(); ++it)
         {
+            const std::string& x = *it;
             if (histogram.count(x) || x.length() == 1)
             {
                 histogram[x]++;
@@ -120,11 +121,15 @@ void BaseVectorizer::scanForSparseHistogram(std::string abs_filepath_to_features
     }
     in.close();
 
-    for (const auto& entry : histogram)
+    for (std::tr1::unordered_map<std::string, int>::iterator it = histogram.begin(); it != histogram.end(); )
     {
-        if (entry.second >= minfrequency)
+        if (it->second >= minfrequency)
         {
-            histogram.erase(entry.first);
+            it = histogram.erase(it);
+        }
+        else
+        {
+            ++it;
         }
     }
 

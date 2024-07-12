@@ -4,9 +4,11 @@
 #include <fstream>
 #include <iostream>
 #include <algorithm>
+#include <sstream>
+#include <memory> // Include TR1 shared_ptr
 
 RandomForestClassifier::RandomForestClassifier(BaseVectorizer* pvec)
-    : num_trees(num_trees), max_depth(max_depth)
+    : num_trees(50), max_depth(5) // Initialize with default values
 {
     pVec = pvec;
 }
@@ -25,20 +27,25 @@ void RandomForestClassifier::setHyperparameters(std::string hyperparameters)
     num_trees = 50;
     max_depth = 5;
 
-    while (std::getline(tokenStream, token, ',')) {
+    while (std::getline(tokenStream, token, ','))
+    {
         std::istringstream pairStream(token);
         std::string key;
         double value;
 
-        if (std::getline(pairStream, key, '=') && pairStream >> value) {
-            cout << key << " = " << value << endl;
-            if (key == "minfrequency") {
+        if (std::getline(pairStream, key, '=') && pairStream >> value)
+        {
+            std::cout << key << " = " << value << std::endl;
+            if (key == "minfrequency")
+            {
                 minfrequency = value;
             }
-            if (key == "num_trees") {
+            else if (key == "num_trees")
+            {
                 num_trees = value;
             }
-            else if (key == "max_depth") {
+            else if (key == "max_depth")
+            {
                 max_depth = value;
             }
         }
@@ -52,11 +59,11 @@ void RandomForestClassifier::fit(std::string abs_filepath_to_features, std::stri
         pVec->scanForSparseHistogram(abs_filepath_to_features, minfrequency);
     }
     pVec->fit(abs_filepath_to_features, abs_filepath_to_labels);
-    std::vector<std::shared_ptr<Sentence>> sentences = pVec->sentences;
-    
+    std::vector<std::tr1::shared_ptr<Sentence> > sentences = pVec->sentences;
+
     for (int i = 0; i < num_trees; ++i)
     {
-        auto tree = std::make_shared<DecisionTree>(max_depth);
+        std::tr1::shared_ptr<DecisionTree> tree(new DecisionTree(max_depth));
         tree->fit(sentences);
         trees.push_back(tree);
     }
@@ -71,9 +78,9 @@ Prediction RandomForestClassifier::predict(std::string sentence, bool preprocess
     std::vector<double> feature_vector = pVec->getSentenceFeatures(processed_input);
 
     std::vector<int> votes(3, 0); // Assuming 3 classes: POS, NEG, NEU
-    for (const auto& tree : trees)
+    for (std::vector<std::tr1::shared_ptr<DecisionTree> >::const_iterator it = trees.begin(); it != trees.end(); ++it)
     {
-        int prediction = tree->predict(feature_vector).label;
+        int prediction = (*it)->predict(feature_vector).label;
         votes[prediction]++;
     }
 
@@ -107,8 +114,8 @@ Prediction RandomForestClassifier::predict(std::string sentence, bool preprocess
 
 void RandomForestClassifier::predict(std::string abs_filepath_to_features, std::string abs_filepath_to_labels, bool preprocess)
 {
-    std::ifstream in(abs_filepath_to_features);
-    std::ofstream out(abs_filepath_to_labels);
+    std::ifstream in(abs_filepath_to_features.c_str());
+    std::ofstream out(abs_filepath_to_labels.c_str());
     std::string feature_input;
 
     if (!in)
@@ -123,38 +130,37 @@ void RandomForestClassifier::predict(std::string abs_filepath_to_features, std::
         return;
     }
 
-    #ifdef BENCHMARK
+#ifdef BENCHMARK
     double sumduration = 0.0;
     double sumstrlen = 0.0;
     size_t num_rows = 0;
-    #endif
+#endif
 
     while (getline(in, feature_input))
     {
-        #ifdef BENCHMARK
-        auto start = std::chrono::high_resolution_clock::now();
-        #endif
+#ifdef BENCHMARK
+        clock_t start = clock();
+#endif
 
         Prediction result = predict(feature_input, preprocess);
 
-        #ifdef BENCHMARK
-        auto end = std::chrono::high_resolution_clock::now();
-        std::chrono::duration<double, std::milli> duration = end - start;
-        double milliseconds = duration.count();
+#ifdef BENCHMARK
+        clock_t end = clock();
+        double milliseconds = static_cast<double>(end - start) / CLOCKS_PER_SEC * 1000.0;
         sumduration += milliseconds;
         sumstrlen += feature_input.length();
         num_rows++;
-        #endif
+#endif
 
         out << result.label << "," << result.probability << std::endl;
     }
 
-    #ifdef BENCHMARK
+#ifdef BENCHMARK
     double avgduration = sumduration / num_rows;
-    cout << "Average Time per Text = " << avgduration << " ms" << endl;
+    std::cout << "Average Time per Text = " << avgduration << " ms" << std::endl;
     double avgstrlen = sumstrlen / num_rows;
-    cout << "Average Length of Text (chars) = " << avgstrlen << endl;
-    #endif
+    std::cout << "Average Length of Text (chars) = " << avgstrlen << std::endl;
+#endif
 
     in.close();
     out.close();
@@ -162,7 +168,7 @@ void RandomForestClassifier::predict(std::string abs_filepath_to_features, std::
 
 void RandomForestClassifier::save(const std::string& filename) const
 {
-    std::ofstream outFile(filename, std::ios::binary);
+    std::ofstream outFile(filename.c_str(), std::ios::binary);
     if (!outFile.is_open())
     {
         std::cerr << "Failed to open file for writing." << std::endl;
@@ -173,9 +179,9 @@ void RandomForestClassifier::save(const std::string& filename) const
 
     size_t num_trees = trees.size();
     outFile.write(reinterpret_cast<const char*>(&num_trees), sizeof(num_trees));
-    for (const auto& tree : trees)
+    for (std::vector<std::tr1::shared_ptr<DecisionTree> >::const_iterator it = trees.begin(); it != trees.end(); ++it)
     {
-        tree->save(outFile);
+        (*it)->save(outFile);
     }
 
     outFile.close();
@@ -183,7 +189,7 @@ void RandomForestClassifier::save(const std::string& filename) const
 
 void RandomForestClassifier::load(const std::string& filename)
 {
-    std::ifstream inFile(filename, std::ios::binary);
+    std::ifstream inFile(filename.c_str(), std::ios::binary);
     if (!inFile.is_open())
     {
         std::cerr << "Failed to open file for reading." << std::endl;
@@ -197,7 +203,7 @@ void RandomForestClassifier::load(const std::string& filename)
     trees.resize(num_trees);
     for (size_t i = 0; i < num_trees; ++i)
     {
-        auto tree = std::make_shared<DecisionTree>();
+        std::tr1::shared_ptr<DecisionTree> tree(new DecisionTree());
         tree->load(inFile);
         trees[i] = tree;
     }

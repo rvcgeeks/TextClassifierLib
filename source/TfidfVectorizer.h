@@ -5,7 +5,6 @@
 #include <vector>
 #include <memory>
 #include <iostream>
-#include <unordered_set>
 #include <unordered_map>
 #include <fstream>
 #include <sstream>
@@ -64,17 +63,17 @@ public:
      * @param abs_filepath_to_features Absolute filepath to features file.
      * @param abs_filepath_to_labels Absolute filepath to labels file.
      */
-    void fit(string abs_filepath_to_features, string abs_filepath_to_labels) override;
+    void fit(std::string abs_filepath_to_features, std::string abs_filepath_to_labels);
 
     /**
      * @brief Print the shape of the data.
      */
-    void shape() override;
+    void shape();
 
     /**
      * @brief Print the first few elements of the data.
      */
-    void head() override;
+    void head();
 
     /**
      * @brief Check if a word is present in a sentence.
@@ -88,7 +87,7 @@ public:
      * @brief Add a sentence to the word array.
      * @param new_sentence_vector The sentence to add.
      */
-    void pushSentenceToWordArray(vector<string> new_sentence_vector);
+    void pushSentenceToWordArray(std::vector<std::string> new_sentence_vector);
 
     /**
      * @brief Create a sentence object.
@@ -96,35 +95,35 @@ public:
      * @param label_ The label of the sentence.
      * @return Shared pointer to the created sentence object.
      */
-    shared_ptr<Sentence> createSentenceObject(vector<string> new_sentence_vector, bool label_);
+    std::tr1::shared_ptr<Sentence> createSentenceObject(std::vector<std::string> new_sentence_vector, bool label_);
 
     /**
      * @brief Add a sentence to the vectorizer.
      * @param new_sentence The sentence to add.
      * @param label_ The label of the sentence.
      */
-    void addSentence(string new_sentence, bool label_) override;
+    void addSentence(std::string new_sentence, bool label_);
 
     /**
      * @brief Check if a word is present in the vectorizer.
      * @param word_to_check The word to check.
      * @return True if the word is present, false otherwise.
      */
-    bool ContainsWord(const string& word_to_check) override;
+    bool ContainsWord(const std::string& word_to_check);
 
     /**
      * @brief Get the word at a given index.
      * @param idx The index of the word.
      * @return The word at the specified index.
      */
-    string getWord(int idx) { return word_array[idx]; }
+    std::string getWord(int idx) { return word_array[idx]; }
 
     /**
      * @brief Get the sentence at a given index.
      * @param idx The index of the sentence.
      * @return Shared pointer to the sentence at the specified index.
      */
-    shared_ptr<Sentence> getSentence(int idx) { return sentences[idx]; }
+    std::tr1::shared_ptr<Sentence> getSentence(int idx) { return sentences[idx]; }
 
     /**
      * @brief Get the size of the word array.
@@ -143,24 +142,24 @@ public:
      * @param sentence_words The words in the sentence.
      * @return The TF-IDF features for the sentence.
      */
-    std::vector<double> getSentenceFeatures(std::vector<std::string> sentence_words) const override;
+    std::vector<double> getSentenceFeatures(std::vector<std::string> sentence_words) const;
 
-    std::vector<double> getFrequencies(std::unordered_map<int, double> term_freqs) const override;
+    std::vector<double> getFrequencies(std::tr1::unordered_map<int, double> term_freqs) const;
 
     /**
      * @brief Save the vectorizer to a file.
      * @param outFile The output file stream.
      */
-    void save(std::ofstream& outFile) const override;
+    void save(std::ofstream& outFile) const;
 
     /**
      * @brief Load the vectorizer from a file.
      * @param inFile The input file stream.
      */
-    void load(std::ifstream& inFile) override;
+    void load(std::ifstream& inFile);
 
 private:
-    unordered_map<int, double> idf_values;  ///< Store IDF values
+    std::tr1::unordered_map<int, double> idf_values;  ///< Store IDF values
 };
 
 #endif // TFIDFVECTORIZER_H__

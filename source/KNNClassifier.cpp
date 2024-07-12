@@ -5,6 +5,7 @@
 #include <iostream>
 #include <algorithm>
 #include <cmath>
+#include <ctime>  // for clock_t and clock()
 
 KNNClassifier::KNNClassifier(BaseVectorizer* pvec)
 {
@@ -30,7 +31,7 @@ void KNNClassifier::setHyperparameters(std::string hyperparameters)
         double value;
 
         if (std::getline(pairStream, key, '=') && pairStream >> value) {
-            cout << key << " = " << value << endl;
+            std::cout << key << " = " << value << std::endl;
             if (key == "minfrequency") {
                 minfrequency = value;
             }
@@ -50,21 +51,21 @@ void KNNClassifier::fit(std::string abs_filepath_to_features, std::string abs_fi
     pVec->fit(abs_filepath_to_features, abs_filepath_to_labels);
 
     size_t num_features = pVec->word_array.size();
-    std::vector<std::shared_ptr<Sentence>> sentences = pVec->sentences;
+    std::vector<std::tr1::shared_ptr<Sentence> > sentences = pVec->sentences;
     training_features.clear();
     training_labels.clear();
 
-    std::ifstream label_file(abs_filepath_to_labels);
-    std::string label;
+    std::ifstream label_file(abs_filepath_to_labels.c_str());
+    int label;
     for (size_t i = 0; i < sentences.size(); ++i)
     {
         std::vector<double> features;
-        const auto& sentence_map = sentences[i]->sentence_map;
+		const std::tr1::unordered_map<int, double>& sentence_map = sentences[i]->sentence_map;
         features = pVec->getFrequencies(sentence_map);
         training_features.push_back(features);
 
         label_file >> label;
-        training_labels.push_back(std::stoi(label));
+        training_labels.push_back(label);
     }
     label_file.close();
 
@@ -73,8 +74,8 @@ void KNNClassifier::fit(std::string abs_filepath_to_features, std::string abs_fi
 
 void KNNClassifier::predict(std::string abs_filepath_to_features, std::string abs_filepath_to_labels, bool preprocess)
 {
-    std::ifstream in(abs_filepath_to_features);
-    std::ofstream out(abs_filepath_to_labels);
+    std::ifstream in(abs_filepath_to_features.c_str());
+    std::ofstream out(abs_filepath_to_labels.c_str());
     std::string feature_input;
 
     if (!in)
@@ -89,6 +90,8 @@ void KNNClassifier::predict(std::string abs_filepath_to_features, std::string ab
         return;
     }
 
+    clock_t start, end;  // For timing
+
     #ifdef BENCHMARK
     double sumduration = 0.0;
     double sumstrlen = 0.0;
@@ -98,16 +101,15 @@ void KNNClassifier::predict(std::string abs_filepath_to_features, std::string ab
     while (getline(in, feature_input))
     {
         #ifdef BENCHMARK
-        auto start = std::chrono::high_resolution_clock::now();
+        start = clock();
         #endif
 
         Prediction result = predict(feature_input, preprocess);
 
         #ifdef BENCHMARK
-        auto end = std::chrono::high_resolution_clock::now();
-        std::chrono::duration<double, std::milli> duration = end - start;
-        double milliseconds = duration.count();
-        sumduration += milliseconds;
+        end = clock();
+        double duration = ((double)(end - start)) / CLOCKS_PER_SEC * 1000.0;
+        sumduration += duration;
         sumstrlen += feature_input.length();
         num_rows++;
         #endif
@@ -117,9 +119,9 @@ void KNNClassifier::predict(std::string abs_filepath_to_features, std::string ab
 
     #ifdef BENCHMARK
     double avgduration = sumduration / num_rows;
-    cout << "Average Time per Text = " << avgduration << " ms" << endl;
+    std::cout << "Average Time per Text = " << avgduration << " ms" << std::endl;
     double avgstrlen = sumstrlen / num_rows;
-    cout << "Average Length of Text (chars) = " << avgstrlen << endl;
+    std::cout << "Average Length of Text (chars) = " << avgstrlen << std::endl;
     #endif
 
     in.close();
@@ -129,21 +131,22 @@ void KNNClassifier::predict(std::string abs_filepath_to_features, std::string ab
 Prediction KNNClassifier::predict(std::string sentence, bool preprocess)
 {
     GlobalData vars;
+	Prediction result;
     std::vector<std::string> processed_input = pVec->buildSentenceVector(sentence, preprocess);
     std::vector<double> feature_vector = pVec->getSentenceFeatures(processed_input);
 
-    int label = kd_tree.nearestNeighbor(feature_vector);
+    result.label = kd_tree.nearestNeighbor(feature_vector);
 
     // Calculate probability
     double total_distance = 0.0;
     std::vector<double> closest_distances = kd_tree.getClosestDistances(feature_vector, k);
-    for (double dist : closest_distances)
+    for (size_t i = 0; i < closest_distances.size(); ++i)
     {
-        total_distance += dist;
+        total_distance += closest_distances[i];
     }
-    double probability = 1.0 - (total_distance / closest_distances.size());
+    result.probability = 1.0 - (total_distance / closest_distances.size());
 
-    return { label, probability };
+    return result;
 }
 
 int KNNClassifier::getLabel(const std::vector<double>& features) const
@@ -165,7 +168,7 @@ double KNNClassifier::calculateDistance(const std::vector<double>& a, const std:
 
 void KNNClassifier::save(const std::string& filename) const
 {
-    std::ofstream outFile(filename, std::ios::binary);
+    std::ofstream outFile(filename.c_str(), std::ios::binary);
     if (!outFile.is_open())
     {
         std::cerr << "Failed to open file for writing." << std::endl;
@@ -176,23 +179,23 @@ void KNNClassifier::save(const std::string& filename) const
 
     size_t training_features_size = training_features.size();
     outFile.write(reinterpret_cast<const char*>(&training_features_size), sizeof(training_features_size));
-    for (const auto& features : training_features)
+    for (size_t i = 0; i < training_features_size; ++i)
     {
-        size_t features_size = features.size();
+        size_t features_size = training_features[i].size();
         outFile.write(reinterpret_cast<const char*>(&features_size), sizeof(features_size));
-        outFile.write(reinterpret_cast<const char*>(features.data()), features_size * sizeof(int));
+        outFile.write(reinterpret_cast<const char*>(&training_features[i][0]), features_size * sizeof(int));
     }
 
     size_t training_labels_size = training_labels.size();
     outFile.write(reinterpret_cast<const char*>(&training_labels_size), sizeof(training_labels_size));
-    outFile.write(reinterpret_cast<const char*>(training_labels.data()), training_labels_size * sizeof(int));
+    outFile.write(reinterpret_cast<const char*>(&training_labels[0]), training_labels_size * sizeof(int));
 
     outFile.close();
 }
 
 void KNNClassifier::load(const std::string& filename)
 {
-    std::ifstream inFile(filename, std::ios::binary);
+    std::ifstream inFile(filename.c_str(), std::ios::binary);
     if (!inFile.is_open())
     {
         std::cerr << "Failed to open file for reading." << std::endl;
@@ -204,18 +207,18 @@ void KNNClassifier::load(const std::string& filename)
     size_t training_features_size;
     inFile.read(reinterpret_cast<char*>(&training_features_size), sizeof(training_features_size));
     training_features.resize(training_features_size);
-    for (auto& features : training_features)
+    for (size_t i = 0; i < training_features_size; ++i)
     {
         size_t features_size;
         inFile.read(reinterpret_cast<char*>(&features_size), sizeof(features_size));
-        features.resize(features_size);
-        inFile.read(reinterpret_cast<char*>(features.data()), features_size * sizeof(int));
+        training_features[i].resize(features_size);
+        inFile.read(reinterpret_cast<char*>(&training_features[i][0]), features_size * sizeof(int));
     }
 
     size_t training_labels_size;
     inFile.read(reinterpret_cast<char*>(&training_labels_size), sizeof(training_labels_size));
     training_labels.resize(training_labels_size);
-    inFile.read(reinterpret_cast<char*>(training_labels.data()), training_labels_size * sizeof(int));
+    inFile.read(reinterpret_cast<char*>(&training_labels[0]), training_labels_size * sizeof(int));
 
     inFile.close();
 

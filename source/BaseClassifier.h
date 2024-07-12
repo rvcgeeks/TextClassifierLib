@@ -13,13 +13,14 @@
 #include <sstream>
 #include <string>
 #ifdef BENCHMARK
-#include <chrono>
+#include <ctime>
 #endif
 
 #include "CountVectorizer.h"
 #include "TfidfVectorizer.h"
 
 using namespace std;
+using namespace std::tr1;
 
 #define ID_CLASSIFIER_NAIVEBAYESCLASSIFIER              1
 #define ID_CLASSIFIER_LOGISTICREGRESSIONCLASSIFIER      2
@@ -53,7 +54,7 @@ public:
     /**
      * @brief Destructor for BaseClassifier.
      */
-    ~BaseClassifier();
+    virtual ~BaseClassifier();
 
     BaseVectorizer* pVec;   /**< Pointer to the vectorizer. */
 
@@ -106,7 +107,7 @@ public:
      */
     virtual void load(const std::string& filename) = 0;
 
-    int minfrequency = 0;
+    int minfrequency;
 };
 
 #endif // BASECLASSIFIER_H__

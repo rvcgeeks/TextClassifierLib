@@ -11,7 +11,7 @@ TextClassifierFactory::~TextClassifierFactory()
 
 TextClassifierFactory::Product TextClassifierFactory::getTextClassifier(int vectorizer_id, int classifier_id)
 {
-	shared_ptr<BaseClassifier> pclsfr = nullptr;
+	Product pclsfr;
 	BaseVectorizer *pVec = NULL;
 
 	switch (vectorizer_id)
@@ -25,7 +25,7 @@ TextClassifierFactory::Product TextClassifierFactory::getTextClassifier(int vect
             break;
 
         default:
-            return nullptr;
+            return pclsfr;
     }
 
     pVec->setBinary(false);
@@ -60,7 +60,6 @@ TextClassifierFactory::Product TextClassifierFactory::getTextClassifier(int vect
 
 		default:
 			delete pVec;
-			return nullptr;
 	}
 
 	return pclsfr;

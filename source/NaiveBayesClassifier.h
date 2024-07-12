@@ -73,9 +73,9 @@ public:
 
 private:
     double smoothing_param_m; /**< Laplace smoothing parameter. */
-	double smoothing_param_p; /**< Laplace smoothing parameter. */
-    std::unordered_map<int, double> log_prob_pos; /**< Log probabilities for positive class. */
-    std::unordered_map<int, double> log_prob_neg; /**< Log probabilities for negative class. */
+    double smoothing_param_p; /**< Laplace smoothing parameter. */
+    std::tr1::unordered_map<int, double> log_prob_pos; /**< Log probabilities for positive class. */
+    std::tr1::unordered_map<int, double> log_prob_neg; /**< Log probabilities for negative class. */
     double log_prior_pos; /**< Log prior probability for positive class. */
     double log_prior_neg; /**< Log prior probability for negative class. */
 

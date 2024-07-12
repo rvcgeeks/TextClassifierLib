@@ -10,7 +10,6 @@
 #include <vector>
 #include <memory>
 #include <iostream>
-#include <unordered_set>
 #include <unordered_map>
 #include <fstream>
 #include <sstream>
@@ -69,7 +68,7 @@ public:
      * @param abs_filepath_to_features Absolute file path to the features file.
      * @param abs_filepath_to_labels Absolute file path to the labels file.
      */
-    void fit(string abs_filepath_to_features, string abs_filepath_to_labels) override;
+    void fit(std::string abs_filepath_to_features, std::string abs_filepath_to_labels) override;
 
     /**
      * @brief Print the dimensions of the CountVectorizer object.
@@ -97,7 +96,7 @@ public:
      *
      * @param new_sentence_vector The sentence vector containing new words.
      */
-    void pushSentenceToWordArray(vector<string> new_sentence_vector);
+    void pushSentenceToWordArray(std::vector<std::string> new_sentence_vector);
 
     /**
      * @brief Create a Sentence object from a vector of words.
@@ -106,7 +105,7 @@ public:
      * @param label_ Boolean label for the sentence.
      * @return Shared pointer to the created Sentence object.
      */
-    shared_ptr<Sentence> createSentenceObject(vector<string> new_sentence_vector, bool label_);
+    std::tr1::shared_ptr<Sentence> createSentenceObject(std::vector<std::string> new_sentence_vector, bool label_);
 
     /**
      * @brief Add a sentence to the CountVectorizer.
@@ -114,7 +113,7 @@ public:
      * @param new_sentence The new sentence to add.
      * @param label_ Boolean label for the sentence.
      */
-    void addSentence(string new_sentence, bool label_) override;
+    void addSentence(std::string new_sentence, bool label_) override;
 
     /**
      * @brief Check if the CountVectorizer already contains the word.
@@ -122,7 +121,7 @@ public:
      * @param word_to_check The word to check.
      * @return Boolean indicating if the word is present.
      */
-    bool ContainsWord(const string& word_to_check) override;
+    bool ContainsWord(const std::string& word_to_check) override;
 
     /**
      * @brief Get the feature vector for a given sentence.
@@ -132,7 +131,7 @@ public:
      */
     std::vector<double> getSentenceFeatures(std::vector<std::string> sentence_words) const override;
 
-    std::vector<double> getFrequencies(std::unordered_map<int, double> term_freqs) const override;
+    std::vector<double> getFrequencies(std::tr1::unordered_map<int, double> term_freqs) const override;
 
     /**
      * @brief Save the CountVectorizer model to a file.

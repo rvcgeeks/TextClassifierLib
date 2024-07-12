@@ -1,13 +1,10 @@
-/**
- * @file DecisionTree.h
- * @brief Header file for the DecisionTree class.
- */
 
 #ifndef DECISIONTREE_H__
 #define DECISIONTREE_H__
 
 #include <vector>
-#include <memory>
+#include <memory> // for std::tr1::shared_ptr
+#include <unordered_map> // for std::tr1::unordered_map
 #include <string>
 #include <fstream>
 
@@ -41,7 +38,7 @@ public:
      *
      * @param sentences Vector of shared pointers to Sentence objects.
      */
-    void fit(const std::vector<std::shared_ptr<Sentence>>& sentences);
+    void fit(const std::vector<std::tr1::shared_ptr<Sentence> >& sentences);
 
     /**
      * @brief Predict the class label for the given features.
@@ -76,8 +73,8 @@ private:
         int label; /**< Predicted label for the node. */
         int total_samples; /**< Total number of samples in the node. */
         int pos_samples; /**< Number of positive samples in the node. */
-        std::shared_ptr<Node> left; /**< Pointer to the left child node. */
-        std::shared_ptr<Node> right; /**< Pointer to the right child node. */
+        std::tr1::shared_ptr<Node> left; /**< Pointer to the left child node. */
+        std::tr1::shared_ptr<Node> right; /**< Pointer to the right child node. */
 
         /**
          * @brief Constructor for Node struct.
@@ -91,7 +88,7 @@ private:
             : feature_index(feature_index), label(label), total_samples(total_samples), pos_samples(pos_samples) {}
     };
 
-    std::shared_ptr<Node> root; /**< Pointer to the root node of the decision tree. */
+    std::tr1::shared_ptr<Node> root; /**< Pointer to the root node of the decision tree. */
     int max_depth; /**< Maximum depth of the decision tree. */
 
     /**
@@ -101,7 +98,7 @@ private:
      * @param depth Current depth of the tree.
      * @return Pointer to the root node of the built tree.
      */
-    std::shared_ptr<Node> buildTree(const std::vector<std::shared_ptr<Sentence>>& sentences, int depth);
+    std::tr1::shared_ptr<Node> buildTree(const std::vector<std::tr1::shared_ptr<Sentence> >& sentences, int depth);
 
     /**
      * @brief Determine the majority class in the dataset.
@@ -111,7 +108,7 @@ private:
      * @param pos_samples Number of positive samples.
      * @return Majority class label.
      */
-    int majorityClass(const std::vector<std::shared_ptr<Sentence>>& sentences, int& total_samples, int& pos_samples) const;
+    int majorityClass(const std::vector<std::tr1::shared_ptr<Sentence> >& sentences, int& total_samples, int& pos_samples) const;
 
     /**
      * @brief Calculate the Gini index for a split.
@@ -120,7 +117,7 @@ private:
      * @param right Vector of shared pointers to Sentence objects on the right side of the split.
      * @return Gini index value.
      */
-    double giniIndex(const std::vector<std::shared_ptr<Sentence>>& left, const std::vector<std::shared_ptr<Sentence>>& right) const;
+    double giniIndex(const std::vector<std::tr1::shared_ptr<Sentence> >& left, const std::vector<std::tr1::shared_ptr<Sentence> >& right) const;
 
     /**
      * @brief Split the dataset based on a feature.
@@ -130,16 +127,16 @@ private:
      * @param left Vector to store the samples on the left side of the split.
      * @param right Vector to store the samples on the right side of the split.
      */
-    void split(const std::vector<std::shared_ptr<Sentence>>& sentences, int feature_index, std::vector<std::shared_ptr<Sentence>>& left, std::vector<std::shared_ptr<Sentence>>& right) const;
+    void split(const std::vector<std::tr1::shared_ptr<Sentence> >& sentences, int feature_index, std::vector<std::tr1::shared_ptr<Sentence> >& left, std::vector<std::tr1::shared_ptr<Sentence> >& right) const;
 
     /**
      * @brief Predict the class label for a given set of features at a node.
      *
-     *  * @param node Pointer to the current node in the decision tree.
+     * @param node Pointer to the current node in the decision tree.
      * @param features Vector of feature values.
      * @return Prediction object containing the predicted label and probability.
      */
-    Prediction predictNode(const std::shared_ptr<Node>& node, const std::vector<double>& features) const;
+    Prediction predictNode(const std::tr1::shared_ptr<Node>& node, const std::vector<double>& features) const;
 
     /**
      * @brief Save a node of the decision tree to a file recursively.
@@ -147,7 +144,7 @@ private:
      * @param outFile Output file stream to save the node.
      * @param node Pointer to the current node.
      */
-    void saveNode(std::ofstream& outFile, const std::shared_ptr<Node>& node) const;
+    void saveNode(std::ofstream& outFile, const std::tr1::shared_ptr<Node>& node) const;
 
     /**
      * @brief Load a node of the decision tree from a file recursively.
@@ -155,7 +152,7 @@ private:
      * @param inFile Input file stream to load the node.
      * @return Pointer to the loaded node.
      */
-    std::shared_ptr<Node> loadNode(std::ifstream& inFile);
+    std::tr1::shared_ptr<Node> loadNode(std::ifstream& inFile);
 };
 
 #endif // DECISIONTREE_H__

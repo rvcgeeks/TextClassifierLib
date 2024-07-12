@@ -1,4 +1,3 @@
-
 /**
  * @file LogisticRegressionClassifier.h
  * @brief Declaration of LogisticRegressionClassifier class.
@@ -9,6 +8,8 @@
 
 #include <vector>
 #include <cmath>
+#include <string>
+#include <unordered_map>  // TR1 unordered_map
 #include "BaseClassifier.h"
 
 /**
@@ -34,43 +35,43 @@ public:
      * @param hyperparameters A string containing hyperparameters settings.
      *                         Format: "epochs:learning_rate:l1_reg:l2_reg"
      */
-    void setHyperparameters(std::string hyperparameters) override;
+    void setHyperparameters(std::string hyperparameters);
 
     /**
      * @brief Fit the classifier to the training data.
      * @param abs_filepath_to_features Absolute file path to the file containing features.
      * @param abs_filepath_to_labels Absolute file path to the file containing labels.
      */
-    void fit(std::string abs_filepath_to_features, std::string abs_filepath_to_labels) override;
+    void fit(std::string abs_filepath_to_features, std::string abs_filepath_to_labels);
 
     /**
      * @brief Predict labels for test data.
      * @param abs_filepath_to_features Absolute file path to the file containing features.
      * @param abs_filepath_to_labels Absolute file path to the file to save predicted labels.
      */
-    void predict(std::string abs_filepath_to_features, std::string abs_filepath_to_labels, bool preprocess = true) override;
+    void predict(std::string abs_filepath_to_features, std::string abs_filepath_to_labels, bool preprocess = true);
 
     /**
      * @brief Predict label for a single input sentence.
      * @param sentence Input sentence to predict label for.
      * @return Prediction object containing predicted label.
      */
-    Prediction predict(std::string sentence, bool preprocess = true) override;
+    Prediction predict(std::string sentence, bool preprocess = true);
 
     /**
      * @brief Save the model to a file.
      * @param filename Name of the file to save the model.
      */
-    void save(const std::string& filename) const override;
+    void save(const std::string& filename) const;
 
     /**
      * @brief Load the model from a file.
      * @param filename Name of the file to load the model from.
      */
-    void load(const std::string& filename) override;
+    void load(const std::string& filename);
 
 private:
-    std::vector<double> weights; /**< Coefficients for features. */
+    vector<double> weights; /**< Coefficients for features. */
     double bias; /**< Bias term. */
     int epochs; /**< Number of training epochs. */
     double learning_rate; /**< Learning rate for gradient descent. */

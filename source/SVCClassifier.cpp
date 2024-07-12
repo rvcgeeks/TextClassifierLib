@@ -1,9 +1,14 @@
 
 #include "SVCClassifier.h"
+#include "GlobalData.h"
 
 #include <fstream>
 #include <iostream>
-#include "GlobalData.h"
+#include <cmath>
+#include <unordered_map>
+
+
+using namespace std::tr1;
 
 SVCClassifier::SVCClassifier(BaseVectorizer* pvec)
 {
@@ -37,29 +42,37 @@ void SVCClassifier::setHyperparameters(std::string hyperparameters)
     l1_regularization_param = 0.005;
     l2_regularization_param = 0.0;
 
-    while (std::getline(tokenStream, token, ',')) {
+    while (std::getline(tokenStream, token, ','))
+    {
         std::istringstream pairStream(token);
         std::string key;
         double value;
 
-        if (std::getline(pairStream, key, '=') && pairStream >> value) {
-            cout << key << " = " << value << endl;
-            if (key == "minfrequency") {
+        if (std::getline(pairStream, key, '=') && pairStream >> value)
+        {
+            std::cout << key << " = " << value << std::endl;
+            if (key == "minfrequency")
+            {
                 minfrequency = value;
             }
-            if (key == "bias") {
+            if (key == "bias")
+            {
                 bias = value;
             }
-            else if (key == "epochs") {
+            else if (key == "epochs")
+            {
                 epochs = value;
             }
-            else if (key == "learning_rate") {
+            else if (key == "learning_rate")
+            {
                 learning_rate = value;
             }
-            else if (key == "l1_regularization_param") {
+            else if (key == "l1_regularization_param")
+            {
                 l1_regularization_param = value;
             }
-            else if (key == "l2_regularization_param") {
+            else if (key == "l2_regularization_param")
+            {
                 l2_regularization_param = value;
             }
         }
@@ -77,10 +90,10 @@ void SVCClassifier::fit(std::string abs_filepath_to_features, std::string abs_fi
     size_t num_features = pVec->word_array.size();
     weights.assign(num_features, 0.0);
 
-    std::vector<std::shared_ptr<Sentence>> sentences = pVec->sentences;
+    std::vector< std::tr1::shared_ptr<Sentence> > sentences = pVec->sentences;
     std::vector<int> labels(sentences.size());
 
-    std::ifstream label_file(abs_filepath_to_labels);
+    std::ifstream label_file(abs_filepath_to_labels.c_str());
     std::string label;
     for (size_t i = 0; i < labels.size(); ++i)
     {
@@ -95,7 +108,7 @@ void SVCClassifier::fit(std::string abs_filepath_to_features, std::string abs_fi
         for (size_t i = 0; i < sentences.size(); ++i)
         {
             std::vector<double> features;
-            const auto& sentence_map = sentences[i]->sentence_map;
+            const unordered_map<int, double>& sentence_map = sentences[i]->sentence_map;
             features = pVec->getFrequencies(sentence_map);
             double y_true = labels[i];
             double margin = predict_margin(features);
@@ -123,7 +136,7 @@ Prediction SVCClassifier::predict(std::string sentence, bool preprocess)
 {
     GlobalData vars;
     Prediction result;
-    std::vector<string> processed_input = pVec->buildSentenceVector(sentence, preprocess);
+    std::vector<std::string> processed_input = pVec->buildSentenceVector(sentence, preprocess);
     std::vector<double> feature_vector = pVec->getSentenceFeatures(processed_input);
     double margin = predict_margin(feature_vector);
     
@@ -143,8 +156,8 @@ Prediction SVCClassifier::predict(std::string sentence, bool preprocess)
 
 void SVCClassifier::predict(std::string abs_filepath_to_features, std::string abs_filepath_to_labels, bool preprocess)
 {
-    std::ifstream in(abs_filepath_to_features);
-    std::ofstream out(abs_filepath_to_labels);
+    std::ifstream in(abs_filepath_to_features.c_str());
+    std::ofstream out(abs_filepath_to_labels.c_str());
     std::string feature_input;
 
     if (!in)
@@ -165,18 +178,17 @@ void SVCClassifier::predict(std::string abs_filepath_to_features, std::string ab
     size_t num_rows = 0;
     #endif
 
-    while (getline(in, feature_input))
+    while (std::getline(in, feature_input))
     {
         #ifdef BENCHMARK
-        auto start = std::chrono::high_resolution_clock::now();
+        clock_t start = clock();
         #endif
 
         Prediction result = predict(feature_input, preprocess);
 
         #ifdef BENCHMARK
-        auto end = std::chrono::high_resolution_clock::now();
-        std::chrono::duration<double, std::milli> duration = end - start;
-        double milliseconds = duration.count();
+        clock_t end = clock();
+        double milliseconds = (double)(end - start) / CLOCKS_PER_SEC * 1000;
         sumduration += milliseconds;
         sumstrlen += feature_input.length();
         num_rows++;
@@ -187,9 +199,9 @@ void SVCClassifier::predict(std::string abs_filepath_to_features, std::string ab
 
     #ifdef BENCHMARK
     double avgduration = sumduration / num_rows;
-    cout << "Average Time per Text = " << avgduration << " ms" << endl;
+    std::cout << "Average Time per Text = " << avgduration << " ms" << std::endl;
     double avgstrlen = sumstrlen / num_rows;
-    cout << "Average Length of Text (chars) = " << avgstrlen << endl;
+    std::cout << "Average Length of Text (chars) = " << avgstrlen << std::endl;
     #endif
 
     in.close();
@@ -198,7 +210,7 @@ void SVCClassifier::predict(std::string abs_filepath_to_features, std::string ab
 
 void SVCClassifier::save(const std::string& filename) const
 {
-    std::ofstream outFile(filename, std::ios::binary);
+    std::ofstream outFile(filename.c_str(), std::ios::binary);
     if (!outFile.is_open())
     {
         std::cerr << "Failed to open file for writing." << std::endl;
@@ -209,7 +221,7 @@ void SVCClassifier::save(const std::string& filename) const
 
     size_t weight_size = weights.size();
     outFile.write(reinterpret_cast<const char*>(&weight_size), sizeof(weight_size));
-    outFile.write(reinterpret_cast<const char*>(weights.data()), weight_size * sizeof(double));
+    outFile.write(reinterpret_cast<const char*>(&weights[0]), weight_size * sizeof(double));
     outFile.write(reinterpret_cast<const char*>(&bias), sizeof(bias));
 
     outFile.close();
@@ -217,7 +229,7 @@ void SVCClassifier::save(const std::string& filename) const
 
 void SVCClassifier::load(const std::string& filename)
 {
-    std::ifstream inFile(filename, std::ios::binary);
+    std::ifstream inFile(filename.c_str(), std::ios::binary);
     if (!inFile.is_open())
     {
         std::cerr << "Failed to open file for reading." << std::endl;
@@ -229,7 +241,7 @@ void SVCClassifier::load(const std::string& filename)
     size_t weight_size;
     inFile.read(reinterpret_cast<char*>(&weight_size), sizeof(weight_size));
     weights.resize(weight_size);
-    inFile.read(reinterpret_cast<char*>(weights.data()), weight_size * sizeof(double));
+    inFile.read(reinterpret_cast<char*>(&weights[0]), weight_size * sizeof(double));
     inFile.read(reinterpret_cast<char*>(&bias), sizeof(bias));
 
     inFile.close();
