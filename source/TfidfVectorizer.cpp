@@ -1,4 +1,13 @@
 
+/*++
+
+Revision History:
+	Date:	Jun 28, 2024.
+	Author:	Rajas Chavadekar.
+	Desc:	Created.
+
+--*/
+
 #include "TfidfVectorizer.h"
 
 #include <cmath>
@@ -265,6 +274,8 @@ vector<double> TfidfVectorizer::getSentenceFeatures(vector<string> sentence_word
 
 void TfidfVectorizer::save(ofstream& outFile) const
 {
+	outFile.write(reinterpret_cast<const char*>(&vers_info), sizeof(vers_info));
+
     size_t word_array_size = word_array.size();
     outFile.write(reinterpret_cast<const char*>(&word_array_size), sizeof(word_array_size));
     for (vector<string>::const_iterator word = word_array.begin(); word != word_array.end(); ++word)
@@ -289,6 +300,8 @@ void TfidfVectorizer::save(ofstream& outFile) const
 
 void TfidfVectorizer::load(ifstream& inFile)
 {
+	inFile.read(reinterpret_cast<char*>(&vers_info), sizeof(vers_info));
+
     word_array.clear();
     word_to_idx.clear();
     sentences.clear();

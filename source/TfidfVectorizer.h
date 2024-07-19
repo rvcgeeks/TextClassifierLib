@@ -1,3 +1,13 @@
+
+/*++
+
+Revision History:
+	Date:	Jun 28, 2024.
+	Author:	Rajas Chavadekar.
+	Desc:	Created.
+
+--*/
+
 #ifndef TFIDFVECTORIZER_H__
 #define TFIDFVECTORIZER_H__
 

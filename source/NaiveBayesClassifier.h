@@ -3,6 +3,15 @@
  * @brief Declaration of NaiveBayesClassifier class.
  */
 
+/*++
+
+Revision History:
+	Date:	Jun 28, 2024.
+	Author:	Rajas Chavadekar.
+	Desc:	Created.
+
+--*/
+
 #ifndef NAIVEBAYESCLASSIFIER_H__
 #define NAIVEBAYESCLASSIFIER_H__
 

@@ -1,3 +1,13 @@
+
+/*++
+
+Revision History:
+	Date:	Jun 28, 2024.
+	Author:	Rajas Chavadekar.
+	Desc:	Created.
+
+--*/
+
 #ifndef LINEARSVCCLASSIFIER_H__
 #define LINEARSVCCLASSIFIER_H__
 

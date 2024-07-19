@@ -3,6 +3,15 @@
  * @brief Base class for all classifiers.
  */
 
+/*++
+
+Revision History:
+	Date:	Jun 28, 2024.
+	Author:	Rajas Chavadekar.
+	Desc:	Created.
+
+--*/
+
 #ifndef BASECLASSIFIER_H__
 #define BASECLASSIFIER_H__
 
@@ -106,6 +115,8 @@ public:
      * @param filename The name of the file to load the classifier from.
      */
     virtual void load(const std::string& filename) = 0;
+
+	void setVersionInfo(char *vers_info_in);
 
     int minfrequency;
 };

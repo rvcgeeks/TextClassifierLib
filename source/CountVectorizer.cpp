@@ -3,6 +3,15 @@
  * @brief Implementation of the CountVectorizer class.
  */
 
+/*++
+
+Revision History:
+	Date:	Jun 28, 2024.
+	Author:	Rajas Chavadekar.
+	Desc:	Created.
+
+--*/
+
 #include "CountVectorizer.h"
 
 using namespace std;
@@ -289,6 +298,8 @@ std::vector<double> CountVectorizer::getFrequencies(std::tr1::unordered_map<int,
  */
 void CountVectorizer::save(std::ofstream& outFile) const
 {
+	outFile.write(reinterpret_cast<const char*>(&vers_info), sizeof(vers_info));
+
     size_t word_array_size = word_array.size();
     outFile.write(reinterpret_cast<const char*>(&word_array_size), sizeof(word_array_size));
     for (std::vector<std::string>::const_iterator it = word_array.begin(); it != word_array.end(); ++it)
@@ -329,6 +340,8 @@ void CountVectorizer::load(std::ifstream& inFile)
     word_array.clear();
     word_to_idx.clear();
     sentences.clear();
+
+	inFile.read(reinterpret_cast<char*>(&vers_info), sizeof(vers_info));
 
     size_t word_array_size;
     inFile.read(reinterpret_cast<char*>(&word_array_size), sizeof(word_array_size));
