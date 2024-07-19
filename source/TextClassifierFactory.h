@@ -3,6 +3,15 @@
  * @brief Header file containing the declaration of TextClassifierFactory class.
  */
 
+/*++
+
+Revision History:
+	Date:	Jun 28, 2024.
+	Author:	Rajas Chavadekar.
+	Desc:	Created.
+
+--*/
+
 #ifndef TEXTCLASSIFIERFACTORY_H__
 #define TEXTCLASSIFIERFACTORY_H__
 

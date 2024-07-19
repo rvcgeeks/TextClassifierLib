@@ -1,4 +1,13 @@
 
+/*++
+
+Revision History:
+	Date:	Jun 28, 2024.
+	Author:	Rajas Chavadekar.
+	Desc:	Created.
+
+--*/
+
 #include <iostream>
 #include <string>
 #include <algorithm>
@@ -11,7 +20,7 @@ std::string preprocess_text(const std::string& text) {
 
     std::replace(processed.begin(), processed.end(), '\n', ' ');
 
-    std::string filtered;
+    std::string filtered = "";
     for (char c : processed) {
         if (std::isalnum(c) || std::isspace(c) || std::ispunct(c)) {
             filtered += std::tolower(c);
@@ -129,4 +138,10 @@ void BaseVectorizer::scanForSparseHistogram(std::string abs_filepath_to_features
     }
 
     std::cout << "No of Rare Words = " << histogram.size() << std::endl;
+}
+
+void BaseVectorizer::setVersionInfo(char* vers_info_in)
+{
+    memset(vers_info, 0, sizeof(vers_info));
+    strcpy(vers_info, vers_info_in);
 }

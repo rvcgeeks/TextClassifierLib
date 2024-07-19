@@ -3,6 +3,15 @@
  * @brief Implementation of the BaseClassifier class.
  */
 
+/*++
+
+Revision History:
+	Date:	Jun 28, 2024.
+	Author:	Rajas Chavadekar.
+	Desc:	Created.
+
+--*/
+
 #include "BaseClassifier.h"
 
 /**
@@ -33,4 +42,12 @@ void BaseClassifier::shape()
 void BaseClassifier::head()
 {
     pVec->head();
+}
+
+/**
+ * @brief Set Model Version.
+ */
+void BaseClassifier::setVersionInfo(char* vers_info_in)
+{
+	pVec->setVersionInfo(vers_info_in);
 }

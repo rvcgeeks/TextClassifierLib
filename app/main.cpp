@@ -1,4 +1,13 @@
 
+/*++
+
+Revision History:
+	Date:	Jun 28, 2024.
+	Author:	Rajas Chavadekar.
+	Desc:	Created.
+
+--*/
+
 #include <iostream>
 
 #include "../source/TextClassifierFactory.h"
@@ -15,7 +24,7 @@ int main(int argc, char **argv)
 	if (argc < 6)
 	{
 		cout << "Usage: " << endl
-			 << "  " << argv[0] << " f (vectorizer id) (classifier id) my_model.bin features.txt labels.txt \"hyperparam1=val1,hyperparam2=val2,...\"" << endl
+			 << "  " << argv[0] << " f (vectorizer id) (classifier id) my_model.bin features.txt labels.txt (model version string) \"hyperparam1=val1,hyperparam2=val2,...\"" << endl
 			 << "  " << argv[0] << " p (vectorizer id) (classifier id) my_model.bin features.txt labels_pred.txt" << endl
 		     << "  " << argv[0] << " 1 (vectorizer id) (classifier id) my_model.bin \"This is string to classify\" " << endl
 			 << "\nwhere vectorizer id = " << endl
@@ -38,8 +47,9 @@ int main(int argc, char **argv)
 	// txtclsfr f 2 my_model.bin features.txt labels.txt
 	if(argv[1][0] == 'f') {
 		cout << "Training\n";
-		if (argc == 8) {
-			pclsfr->setHyperparameters(string(argv[7]));
+		pclsfr->setVersionInfo(argv[7]);
+		if (argc == 9) {
+			pclsfr->setHyperparameters(string(argv[8]));
 		}
 		pclsfr->fit(argv[5], argv[6]);
 		pclsfr->shape();

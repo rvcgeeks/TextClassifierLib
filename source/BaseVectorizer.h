@@ -1,7 +1,17 @@
+
 /**
  * @file BaseVectorizer.h
  * @brief Declaration of the BaseVectorizer class and related structures.
  */
+
+/*++
+
+Revision History:
+	Date:	Jun 28, 2024.
+	Author:	Rajas Chavadekar.
+	Desc:	Created.
+
+--*/
 
 #ifndef BASEVECTORIZER_H__
 #define BASEVECTORIZER_H__
@@ -11,11 +21,14 @@
 #include <unordered_map>
 #include <memory>
 #include <fstream>
+#include <cstring>
 
 #include "GlobalData.h"
 
 #define ID_VECTORIZER_COUNT     1
 #define ID_VECTORIZER_TFIDF     2
+
+#define VERSION_INFO_SIZE		32
 
 /**
  * @brief Structure representing a sentence with its corresponding label.
@@ -109,6 +122,8 @@ public:
 
     virtual std::vector<double> getFrequencies(std::unordered_map<int, double> term_freqs) const = 0;
 
+    void setVersionInfo(char* vers_info_in);
+
     /**
      * @brief Retrieves the word at the specified index.
      * 
@@ -169,6 +184,7 @@ protected:
     bool binary; /**< Flag indicating binary encoding. */
     bool case_sensitive; /**< Flag indicating case sensitivity. */
     bool include_stopwords; /**< Flag indicating inclusion of stop words. */
+    char vers_info[VERSION_INFO_SIZE];
 };
 
 #endif // BASEVECTORIZER_H__

@@ -4,6 +4,15 @@
  * @brief Declaration of LogisticRegressionClassifier class.
  */
 
+/*++
+
+Revision History:
+	Date:	Jun 28, 2024.
+	Author:	Rajas Chavadekar.
+	Desc:	Created.
+
+--*/
+
 #ifndef LOGISTICREGRESSIONCLASSIFIER_H__
 #define LOGISTICREGRESSIONCLASSIFIER_H__
 
