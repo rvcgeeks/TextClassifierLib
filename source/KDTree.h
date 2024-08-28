@@ -17,6 +17,8 @@ Revision History:
 #include <limits>
 #include <queue>
 
+#include "GlobalData.h"
+
 /**
  * @file KDTree.h
  * @brief Declaration of KDTree class.

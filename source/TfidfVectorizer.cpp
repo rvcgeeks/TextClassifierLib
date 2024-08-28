@@ -262,21 +262,21 @@ void TfidfVectorizer::save(std::ofstream& outFile) const
 {
     outFile.write(reinterpret_cast<const char*>(&vers_info), sizeof(vers_info));
 
-    size_t word_array_size = word_array.size();
+    ml_size_t word_array_size = word_array.size();
     outFile.write(reinterpret_cast<const char*>(&word_array_size), sizeof(word_array_size));
     for (const auto& word : word_array)
     {
-        size_t word_size = word.size();
+        ml_size_t word_size = word.size();
         outFile.write(reinterpret_cast<const char*>(&word_size), sizeof(word_size));
         outFile.write(word.data(), word_size);
     }
 
     /*
-    size_t sentence_size = sentences.size();
+    ml_size_t sentence_size = sentences.size();
     outFile.write(reinterpret_cast<const char*>(&sentence_size), sizeof(sentence_size));
     for (const auto& sentence : sentences)
     {
-        size_t map_size = sentence->sentence_map.size();
+        ml_size_t map_size = sentence->sentence_map.size();
         outFile.write(reinterpret_cast<const char*>(&map_size), sizeof(map_size));
         for (const auto& entry : sentence->sentence_map)
         {
@@ -287,7 +287,7 @@ void TfidfVectorizer::save(std::ofstream& outFile) const
     }
     */
 
-    size_t idf_size = idf_values.size();
+    ml_size_t idf_size = idf_values.size();
     outFile.write(reinterpret_cast<const char*>(&idf_size), sizeof(idf_size));
     for (const auto& entry : idf_values)
     {
@@ -309,12 +309,12 @@ void TfidfVectorizer::load(std::ifstream& inFile)
 
     inFile.read(reinterpret_cast<char*>(&vers_info), sizeof(vers_info));
 
-    size_t word_array_size;
+    ml_size_t word_array_size;
     inFile.read(reinterpret_cast<char*>(&word_array_size), sizeof(word_array_size));
     word_array.resize(word_array_size);
-    for (size_t i = 0; i < word_array_size; ++i)
+    for (ml_size_t i = 0; i < word_array_size; ++i)
     {
-        size_t word_size;
+        ml_size_t word_size;
         inFile.read(reinterpret_cast<char*>(&word_size), sizeof(word_size));
         word_array[i].resize(word_size);
         inFile.read(&word_array[i][0], word_size);
@@ -322,15 +322,15 @@ void TfidfVectorizer::load(std::ifstream& inFile)
     }
 
     /*
-    size_t sentence_size;
+    ml_size_t sentence_size;
     inFile.read(reinterpret_cast<char*>(&sentence_size), sizeof(sentence_size));
     sentences.resize(sentence_size);
-    for (size_t i = 0; i < sentence_size; ++i)
+    for (ml_size_t i = 0; i < sentence_size; ++i)
     {
         auto sentence = make_shared<Sentence>();
-        size_t map_size;
+        ml_size_t map_size;
         inFile.read(reinterpret_cast<char*>(&map_size), sizeof(map_size));
-        for (size_t j = 0; j < map_size; ++j)
+        for (ml_size_t j = 0; j < map_size; ++j)
         {
             int key;
             double value;
@@ -343,9 +343,9 @@ void TfidfVectorizer::load(std::ifstream& inFile)
     }
     */
 
-    size_t idf_size;
+    ml_size_t idf_size;
     inFile.read(reinterpret_cast<char*>(&idf_size), sizeof(idf_size));
-    for (size_t i = 0; i < idf_size; ++i)
+    for (ml_size_t i = 0; i < idf_size; ++i)
     {
         int key;
         double value;

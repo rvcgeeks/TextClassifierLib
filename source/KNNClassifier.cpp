@@ -58,14 +58,14 @@ void KNNClassifier::fit(std::string abs_filepath_to_features, std::string abs_fi
     }
     pVec->fit(abs_filepath_to_features, abs_filepath_to_labels);
 
-    size_t num_features = pVec->word_array.size();
+    ml_size_t num_features = pVec->word_array.size();
     std::vector<std::shared_ptr<Sentence>> sentences = pVec->sentences;
     training_features.clear();
     training_labels.clear();
 
     std::ifstream label_file(abs_filepath_to_labels);
     std::string label;
-    for (size_t i = 0; i < sentences.size(); ++i)
+    for (ml_size_t i = 0; i < sentences.size(); ++i)
     {
         std::vector<double> features;
         const auto& sentence_map = sentences[i]->sentence_map;
@@ -101,7 +101,7 @@ void KNNClassifier::predict(std::string abs_filepath_to_features, std::string ab
     #ifdef BENCHMARK
     double sumduration = 0.0;
     double sumstrlen = 0.0;
-    size_t num_rows = 0;
+    ml_size_t num_rows = 0;
     #endif
 
     while (getline(in, feature_input))
@@ -164,7 +164,7 @@ int KNNClassifier::getLabel(const std::vector<double>& features) const
 double KNNClassifier::calculateDistance(const std::vector<double>& a, const std::vector<double>& b) const
 {
     double sum = 0.0;
-    for (size_t i = 0; i < a.size(); ++i)
+    for (ml_size_t i = 0; i < a.size(); ++i)
     {
         double diff = a[i] - b[i];
         sum += diff * diff;
@@ -183,16 +183,16 @@ void KNNClassifier::save(const std::string& filename) const
 
     pVec->save(outFile);
 
-    size_t training_features_size = training_features.size();
+    ml_size_t training_features_size = training_features.size();
     outFile.write(reinterpret_cast<const char*>(&training_features_size), sizeof(training_features_size));
     for (const auto& features : training_features)
     {
-        size_t features_size = features.size();
+        ml_size_t features_size = features.size();
         outFile.write(reinterpret_cast<const char*>(&features_size), sizeof(features_size));
         outFile.write(reinterpret_cast<const char*>(features.data()), features_size * sizeof(int));
     }
 
-    size_t training_labels_size = training_labels.size();
+    ml_size_t training_labels_size = training_labels.size();
     outFile.write(reinterpret_cast<const char*>(&training_labels_size), sizeof(training_labels_size));
     outFile.write(reinterpret_cast<const char*>(training_labels.data()), training_labels_size * sizeof(int));
 
@@ -210,18 +210,18 @@ void KNNClassifier::load(const std::string& filename)
 
     pVec->load(inFile);
 
-    size_t training_features_size;
+    ml_size_t training_features_size;
     inFile.read(reinterpret_cast<char*>(&training_features_size), sizeof(training_features_size));
     training_features.resize(training_features_size);
     for (auto& features : training_features)
     {
-        size_t features_size;
+        ml_size_t features_size;
         inFile.read(reinterpret_cast<char*>(&features_size), sizeof(features_size));
         features.resize(features_size);
         inFile.read(reinterpret_cast<char*>(features.data()), features_size * sizeof(int));
     }
 
-    size_t training_labels_size;
+    ml_size_t training_labels_size;
     inFile.read(reinterpret_cast<char*>(&training_labels_size), sizeof(training_labels_size));
     training_labels.resize(training_labels_size);
     inFile.read(reinterpret_cast<char*>(training_labels.data()), training_labels_size * sizeof(int));

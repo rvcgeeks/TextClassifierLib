@@ -17,6 +17,8 @@ Revision History:
 
 using namespace std;
 
+typedef unsigned int ml_size_t;
+
 class GlobalData
 {
 public:

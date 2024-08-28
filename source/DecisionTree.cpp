@@ -58,8 +58,8 @@ std::shared_ptr<DecisionTree::Node> DecisionTree::buildTree(const std::vector<st
     int best_feature = -1;
     std::vector<std::shared_ptr<Sentence>> best_left, best_right;
 
-    size_t num_features = sentences[0]->sentence_map.size();
-    for (size_t i = 0; i < num_features; ++i)
+    ml_size_t num_features = sentences[0]->sentence_map.size();
+    for (ml_size_t i = 0; i < num_features; ++i)
     {
         std::vector<std::shared_ptr<Sentence>> left, right;
         split(sentences, i, left, right);

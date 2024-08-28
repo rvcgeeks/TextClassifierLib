@@ -22,7 +22,7 @@ void KDTree::build(const std::vector<std::vector<double>>& points, const std::ve
     if (points.empty()) return;
     dimension = points[0].size();
     std::vector<std::pair<std::vector<double>, int>> point_labels(points.size());
-    for (size_t i = 0; i < points.size(); ++i)
+    for (ml_size_t i = 0; i < points.size(); ++i)
     {
         point_labels[i] = std::make_pair(points[i], labels[i]);
     }
@@ -34,7 +34,7 @@ KDNode* KDTree::buildTree(std::vector<std::pair<std::vector<double>, int>>& poin
     if (points.empty()) return nullptr;
 
     int axis = depth % dimension;
-    size_t median = points.size() / 2;
+    ml_size_t median = points.size() / 2;
     std::nth_element(points.begin(), points.begin() + median, points.end(),
                      [axis](const std::pair<std::vector<double>, int>& a, const std::pair<std::vector<double>, int>& b)
                      {
@@ -91,7 +91,7 @@ void KDTree::nearest(KDNode* root, const std::vector<double>& target, KDNode*& b
 double KDTree::calculateDistance(const std::vector<double>& a, const std::vector<double>& b) const
 {
     double sum = 0.0;
-    for (size_t i = 0; i < a.size(); ++i)
+    for (ml_size_t i = 0; i < a.size(); ++i)
     {
         double diff = a[i] - b[i];
         sum += diff * diff;
