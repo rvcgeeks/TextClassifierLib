@@ -29,7 +29,7 @@ LogisticRegressionClassifier::~LogisticRegressionClassifier()
 double LogisticRegressionClassifier::predict_proba(const std::vector<double>& features) const
 {
     double z = bias;
-    for (size_t i = 0; i < features.size(); ++i) {
+    for (unsigned int i = 0; i < features.size(); ++i) {
         z += weights[i] * features[i];
     }
 
@@ -85,7 +85,7 @@ void LogisticRegressionClassifier::fit(std::string abs_filepath_to_features, std
     }
     pVec->fit(abs_filepath_to_features, abs_filepath_to_labels);
 
-    size_t num_features = pVec->word_array.size();
+    unsigned int num_features = pVec->word_array.size();
     weights.assign(num_features, 0.0);
 
 	std::vector<std::tr1::shared_ptr<Sentence> > sentences = pVec->sentences;
@@ -95,7 +95,7 @@ void LogisticRegressionClassifier::fit(std::string abs_filepath_to_features, std
     if (!label_file.is_open()) {
         throw std::runtime_error("Unable to open label file");
     }
-    for (size_t i = 0; i < labels.size(); ++i)
+    for (unsigned int i = 0; i < labels.size(); ++i)
     {
         label_file >> labels[i];
     }
@@ -104,7 +104,7 @@ void LogisticRegressionClassifier::fit(std::string abs_filepath_to_features, std
     for (int epoch = 0; epoch < epochs; ++epoch)
     {
         double total_loss = 0.0;
-        for (size_t i = 0; i < sentences.size(); ++i)
+        for (unsigned int i = 0; i < sentences.size(); ++i)
         {
             std::vector<double> features;
             const std::tr1::unordered_map<int, double>& sentence_map = sentences[i]->sentence_map;
@@ -124,7 +124,7 @@ void LogisticRegressionClassifier::fit(std::string abs_filepath_to_features, std
 
             total_loss += y_true * log(y_pred) + y_false * log(1 - y_pred);
 
-            for (size_t j = 0; j < features.size(); ++j)
+            for (unsigned int j = 0; j < features.size(); ++j)
             {
                 double gradient = error * features[j];
 
@@ -185,7 +185,7 @@ void LogisticRegressionClassifier::predict(std::string abs_filepath_to_features,
     clock_t start;
     double sumduration = 0.0;
     double sumstrlen = 0.0;
-    size_t num_rows = 0;
+    unsigned int num_rows = 0;
     #endif
 
     while (getline(in, feature_input))
@@ -227,7 +227,7 @@ void LogisticRegressionClassifier::save(const std::string& filename) const
 
     pVec->save(outFile);
 
-    size_t weight_size = weights.size();
+    unsigned int weight_size = weights.size();
     outFile.write(reinterpret_cast<const char*>(&weight_size), sizeof(weight_size));
     outFile.write(reinterpret_cast<const char*>(&weights[0]), weight_size * sizeof(double));
     outFile.write(reinterpret_cast<const char*>(&bias), sizeof(bias));
@@ -246,7 +246,7 @@ void LogisticRegressionClassifier::load(const std::string& filename)
 
     pVec->load(inFile);
 
-    size_t weight_size;
+    unsigned int weight_size;
     inFile.read(reinterpret_cast<char*>(&weight_size), sizeof(weight_size));
     weights.resize(weight_size);
     inFile.read(reinterpret_cast<char*>(&weights[0]), weight_size * sizeof(double));

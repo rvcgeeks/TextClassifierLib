@@ -20,6 +20,8 @@ Revision History:
 using namespace std;
 using namespace std::tr1;  // Use tr1 namespace for compatibility
 
+typedef unsigned int ml_size_t;
+
 class GlobalData
 {
 public:
@@ -50,17 +52,17 @@ public:
    }
 
 private:
-   void insertElements(unordered_set<char> *set, char elements[], size_t count)
+   void insertElements(unordered_set<char> *set, char elements[], unsigned int count)
    {
-      for (size_t i = 0; i < count; ++i)
+      for (unsigned int i = 0; i < count; ++i)
       {
          set->insert(elements[i]);
       }
    }
 
-   void insertElements(unordered_set<string> *set, char** elements, size_t count)
+   void insertElements(unordered_set<string> *set, char** elements, unsigned int count)
    {
-      for (size_t i = 0; i < count; ++i)
+      for (unsigned int i = 0; i < count; ++i)
       {
          set->insert(string(elements[i]));
       }

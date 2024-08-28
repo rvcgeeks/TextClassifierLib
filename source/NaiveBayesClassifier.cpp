@@ -138,7 +138,7 @@ double NaiveBayesClassifier::calculate_log_probability(const std::vector<double>
     double log_prob = is_positive ? log_prior_pos : log_prior_neg;
     const std::tr1::unordered_map<int, double>& log_prob_map = is_positive ? log_prob_pos : log_prob_neg;
 
-    for (size_t i = 0; i < features.size(); ++i)
+    for (unsigned int i = 0; i < features.size(); ++i)
     {
         if (features[i] > 0)
         {
@@ -198,7 +198,7 @@ void NaiveBayesClassifier::predict(std::string abs_filepath_to_features, std::st
     #ifdef BENCHMARK
     double sumduration = 0.0;
     double sumstrlen = 0.0;
-    size_t num_rows = 0;
+    unsigned int num_rows = 0;
     #endif
 
     while (getline(in, feature_input))
@@ -242,7 +242,7 @@ void NaiveBayesClassifier::save(const std::string& filename) const
 
     pVec->save(outFile);
 
-    size_t size;
+    unsigned int size;
 
     size = log_prob_pos.size();
     outFile.write(reinterpret_cast<const char*>(&size), sizeof(size));
@@ -277,11 +277,11 @@ void NaiveBayesClassifier::load(const std::string& filename)
 
     pVec->load(inFile);
 
-    size_t size;
+    unsigned int size;
 
     inFile.read(reinterpret_cast<char*>(&size), sizeof(size));
     log_prob_pos.clear();
-    for (size_t i = 0; i < size; ++i)
+    for (unsigned int i = 0; i < size; ++i)
     {
         int key;
         double value;
@@ -292,7 +292,7 @@ void NaiveBayesClassifier::load(const std::string& filename)
 
     inFile.read(reinterpret_cast<char*>(&size), sizeof(size));
     log_prob_neg.clear();
-    for (size_t i = 0; i < size; ++i)
+    for (unsigned int i = 0; i < size; ++i)
     {
         int key;
         double value;

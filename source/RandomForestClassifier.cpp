@@ -94,7 +94,7 @@ Prediction RandomForestClassifier::predict(std::string sentence, bool preprocess
     }
 
     std::vector<double> probabilities(3, 0.0);
-    for (size_t i = 0; i < votes.size(); ++i)
+    for (unsigned int i = 0; i < votes.size(); ++i)
     {
         probabilities[i] = static_cast<double>(votes[i]) / trees.size();
     }
@@ -142,7 +142,7 @@ void RandomForestClassifier::predict(std::string abs_filepath_to_features, std::
 #ifdef BENCHMARK
     double sumduration = 0.0;
     double sumstrlen = 0.0;
-    size_t num_rows = 0;
+    unsigned int num_rows = 0;
 #endif
 
     while (getline(in, feature_input))
@@ -186,7 +186,7 @@ void RandomForestClassifier::save(const std::string& filename) const
 
     pVec->save(outFile);
 
-    size_t num_trees = trees.size();
+    unsigned int num_trees = trees.size();
     outFile.write(reinterpret_cast<const char*>(&num_trees), sizeof(num_trees));
     for (std::vector<std::tr1::shared_ptr<DecisionTree> >::const_iterator it = trees.begin(); it != trees.end(); ++it)
     {
@@ -207,10 +207,10 @@ void RandomForestClassifier::load(const std::string& filename)
 
     pVec->load(inFile);
 
-    size_t num_trees;
+    unsigned int num_trees;
     inFile.read(reinterpret_cast<char*>(&num_trees), sizeof(num_trees));
     trees.resize(num_trees);
-    for (size_t i = 0; i < num_trees; ++i)
+    for (unsigned int i = 0; i < num_trees; ++i)
     {
         std::tr1::shared_ptr<DecisionTree> tree(new DecisionTree());
         tree->load(inFile);

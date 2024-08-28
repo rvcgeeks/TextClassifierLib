@@ -300,21 +300,21 @@ void CountVectorizer::save(std::ofstream& outFile) const
 {
 	outFile.write(reinterpret_cast<const char*>(&vers_info), sizeof(vers_info));
 
-    size_t word_array_size = word_array.size();
+    ml_size_t word_array_size = word_array.size();
     outFile.write(reinterpret_cast<const char*>(&word_array_size), sizeof(word_array_size));
     for (std::vector<std::string>::const_iterator it = word_array.begin(); it != word_array.end(); ++it)
     {
-        size_t word_size = it->size();
+        ml_size_t word_size = it->size();
         outFile.write(reinterpret_cast<const char*>(&word_size), sizeof(word_size));
         outFile.write(it->data(), word_size);
     }
 
     /*
-    size_t sentence_size = sentences.size();
+    ml_size_t sentence_size = sentences.size();
     outFile.write(reinterpret_cast<const char*>(&sentence_size), sizeof(sentence_size));
     for (std::vector< std::tr1::shared_ptr<Sentence> >::const_iterator it = sentences.begin(); it != sentences.end(); ++it)
     {
-        size_t map_size = (*it)->sentence_map.size();
+        ml_size_t map_size = (*it)->sentence_map.size();
         outFile.write(reinterpret_cast<const char*>(&map_size), sizeof(map_size));
         for (tr1::unordered_map<int, double>::const_iterator map_it = (*it)->sentence_map.begin(); map_it != (*it)->sentence_map.end(); ++map_it)
         {
@@ -343,12 +343,12 @@ void CountVectorizer::load(std::ifstream& inFile)
 
 	inFile.read(reinterpret_cast<char*>(&vers_info), sizeof(vers_info));
 
-    size_t word_array_size;
+    ml_size_t word_array_size;
     inFile.read(reinterpret_cast<char*>(&word_array_size), sizeof(word_array_size));
     word_array.resize(word_array_size);
-    for (size_t i = 0; i < word_array_size; ++i)
+    for (ml_size_t i = 0; i < word_array_size; ++i)
     {
-        size_t word_size;
+        ml_size_t word_size;
         inFile.read(reinterpret_cast<char*>(&word_size), sizeof(word_size));
         word_array[i].resize(word_size);
         inFile.read(&word_array[i][0], word_size);
@@ -356,15 +356,15 @@ void CountVectorizer::load(std::ifstream& inFile)
     }
 
     /*
-    size_t sentence_size;
+    ml_size_t sentence_size;
     inFile.read(reinterpret_cast<char*>(&sentence_size), sizeof(sentence_size));
     sentences.resize(sentence_size);
-    for (size_t i = 0; i < sentence_size; ++i)
+    for (ml_size_t i = 0; i < sentence_size; ++i)
     {
         std::tr1::shared_ptr<Sentence> sentence(new Sentence);
-        size_t map_size;
+        ml_size_t map_size;
         inFile.read(reinterpret_cast<char*>(&map_size), sizeof(map_size));
-        for (size_t j = 0; j < map_size; ++j)
+        for (ml_size_t j = 0; j < map_size; ++j)
         {
             int key;
             double value;

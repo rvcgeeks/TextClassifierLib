@@ -32,7 +32,7 @@ SVCClassifier::~SVCClassifier()
 double SVCClassifier::predict_margin(const std::vector<double>& features) const
 {
     double margin = bias;
-    for (size_t i = 0; i < features.size(); ++i)
+    for (ml_size_t i = 0; i < features.size(); ++i)
     {
         margin += weights[i] * features[i];
     }
@@ -96,7 +96,7 @@ void SVCClassifier::fit(std::string abs_filepath_to_features, std::string abs_fi
     }
     pVec->fit(abs_filepath_to_features, abs_filepath_to_labels);
 
-    size_t num_features = pVec->word_array.size();
+    ml_size_t num_features = pVec->word_array.size();
     weights.assign(num_features, 0.0);
 
     std::vector< std::tr1::shared_ptr<Sentence> > sentences = pVec->sentences;
@@ -104,7 +104,7 @@ void SVCClassifier::fit(std::string abs_filepath_to_features, std::string abs_fi
 
     std::ifstream label_file(abs_filepath_to_labels.c_str());
     std::string label;
-    for (size_t i = 0; i < labels.size(); ++i)
+    for (ml_size_t i = 0; i < labels.size(); ++i)
     {
         label_file >> labels[i];
         // Convert labels to +1 or -1 for SVM
@@ -114,7 +114,7 @@ void SVCClassifier::fit(std::string abs_filepath_to_features, std::string abs_fi
 
     for (int epoch = 0; epoch < epochs; ++epoch)
     {
-        for (size_t i = 0; i < sentences.size(); ++i)
+        for (ml_size_t i = 0; i < sentences.size(); ++i)
         {
             std::vector<double> features;
             const unordered_map<int, double>& sentence_map = sentences[i]->sentence_map;
@@ -124,7 +124,7 @@ void SVCClassifier::fit(std::string abs_filepath_to_features, std::string abs_fi
 
             if (y_true * margin < 1)
             {
-                for (size_t j = 0; j < features.size(); ++j)
+                for (ml_size_t j = 0; j < features.size(); ++j)
                 {
                     weights[j] += learning_rate * (y_true * features[j] - l1_regularization_param * (weights[j] > 0 ? 1 : -1) - 2 * l2_regularization_param * weights[j]);
                 }
@@ -132,7 +132,7 @@ void SVCClassifier::fit(std::string abs_filepath_to_features, std::string abs_fi
             }
             else
             {
-                for (size_t j = 0; j < features.size(); ++j)
+                for (ml_size_t j = 0; j < features.size(); ++j)
                 {
                     weights[j] += learning_rate * (-l1_regularization_param * (weights[j] > 0 ? 1 : -1) - 2 * l2_regularization_param * weights[j]);
                 }
@@ -184,7 +184,7 @@ void SVCClassifier::predict(std::string abs_filepath_to_features, std::string ab
     #ifdef BENCHMARK
     double sumduration = 0.0;
     double sumstrlen = 0.0;
-    size_t num_rows = 0;
+    ml_size_t num_rows = 0;
     #endif
 
     while (std::getline(in, feature_input))
@@ -228,7 +228,7 @@ void SVCClassifier::save(const std::string& filename) const
 
     pVec->save(outFile);
 
-    size_t weight_size = weights.size();
+    ml_size_t weight_size = weights.size();
     outFile.write(reinterpret_cast<const char*>(&weight_size), sizeof(weight_size));
     outFile.write(reinterpret_cast<const char*>(&weights[0]), weight_size * sizeof(double));
     outFile.write(reinterpret_cast<const char*>(&bias), sizeof(bias));
@@ -247,7 +247,7 @@ void SVCClassifier::load(const std::string& filename)
 
     pVec->load(inFile);
 
-    size_t weight_size;
+    ml_size_t weight_size;
     inFile.read(reinterpret_cast<char*>(&weight_size), sizeof(weight_size));
     weights.resize(weight_size);
     inFile.read(reinterpret_cast<char*>(&weights[0]), weight_size * sizeof(double));

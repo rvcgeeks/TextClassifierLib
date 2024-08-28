@@ -183,7 +183,7 @@ void TfidfVectorizer::pushSentenceToWordArray(vector<string> new_sentence_vector
         {
             word_array.push_back(*word);
             word_to_idx[*word] = word_array.size() - 1;
-        }
+		}
     }
 }
 
@@ -276,16 +276,16 @@ void TfidfVectorizer::save(ofstream& outFile) const
 {
 	outFile.write(reinterpret_cast<const char*>(&vers_info), sizeof(vers_info));
 
-    size_t word_array_size = word_array.size();
+    ml_size_t word_array_size = word_array.size();
     outFile.write(reinterpret_cast<const char*>(&word_array_size), sizeof(word_array_size));
     for (vector<string>::const_iterator word = word_array.begin(); word != word_array.end(); ++word)
     {
-        size_t word_size = word->size();
+        ml_size_t word_size = word->size();
         outFile.write(reinterpret_cast<const char*>(&word_size), sizeof(word_size));
         outFile.write(word->data(), word_size);
     }
 
-    size_t idf_size = idf_values.size();
+    ml_size_t idf_size = idf_values.size();
     outFile.write(reinterpret_cast<const char*>(&idf_size), sizeof(idf_size));
     for (tr1::unordered_map<int, double>::const_iterator entry = idf_values.begin(); entry != idf_values.end(); ++entry)
     {
@@ -307,21 +307,21 @@ void TfidfVectorizer::load(ifstream& inFile)
     sentences.clear();
     idf_values.clear();
 
-    size_t word_array_size;
+    ml_size_t word_array_size;
     inFile.read(reinterpret_cast<char*>(&word_array_size), sizeof(word_array_size));
     word_array.resize(word_array_size);
-    for (size_t i = 0; i < word_array_size; ++i)
+    for (ml_size_t i = 0; i < word_array_size; ++i)
     {
-        size_t word_size;
+        ml_size_t word_size;
         inFile.read(reinterpret_cast<char*>(&word_size), sizeof(word_size));
         word_array[i].resize(word_size);
         inFile.read(&word_array[i][0], word_size);
         word_to_idx[word_array[i]] = i;
     }
 
-    size_t idf_size;
+    ml_size_t idf_size;
     inFile.read(reinterpret_cast<char*>(&idf_size), sizeof(idf_size));
-    for (size_t i = 0; i < idf_size; ++i)
+    for (ml_size_t i = 0; i < idf_size; ++i)
     {
         int key;
         double value;

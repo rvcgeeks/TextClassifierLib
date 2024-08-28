@@ -20,7 +20,7 @@ double calculateGini(const std::vector<std::tr1::shared_ptr<Sentence> >& group)
 {
     if (group.empty()) return 0.0;
     int pos_count = 0;
-    for (size_t i = 0; i < group.size(); ++i) {
+    for (unsigned int i = 0; i < group.size(); ++i) {
         if (group[i]->label == 1) pos_count++;
     }
     int neg_count = group.size() - pos_count;
@@ -78,8 +78,8 @@ std::tr1::shared_ptr<DecisionTree::Node> DecisionTree::buildTree(const std::vect
     int best_feature = -1;
     std::vector<std::tr1::shared_ptr<Sentence> > best_left, best_right;
 
-    size_t num_features = sentences[0]->sentence_map.size();
-    for (size_t i = 0; i < num_features; ++i)
+    unsigned int num_features = sentences[0]->sentence_map.size();
+    for (unsigned int i = 0; i < num_features; ++i)
     {
         std::vector<std::tr1::shared_ptr<Sentence> > left, right;
         split(sentences, i, left, right);

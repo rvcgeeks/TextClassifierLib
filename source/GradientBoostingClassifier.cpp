@@ -68,7 +68,7 @@ void GradientBoostingClassifier::fit(std::string abs_filepath_to_features, std::
     }
     pVec->fit(abs_filepath_to_features, abs_filepath_to_labels);
 
-    size_t num_features = pVec->word_array.size();
+    unsigned int num_features = pVec->word_array.size();
     trees.clear();
 
     std::vector<std::tr1::shared_ptr<Sentence>> sentences = pVec->sentences;
@@ -76,7 +76,7 @@ void GradientBoostingClassifier::fit(std::string abs_filepath_to_features, std::
 
     std::ifstream label_file(abs_filepath_to_labels.c_str());
     std::string label;
-    for (size_t i = 0; i < labels.size(); ++i)
+    for (unsigned int i = 0; i < labels.size(); ++i)
     {
         label_file >> labels[i];
     }
@@ -86,7 +86,7 @@ void GradientBoostingClassifier::fit(std::string abs_filepath_to_features, std::
 
     for (int i = 0; i < n_trees; ++i)
     {
-        for (size_t j = 0; j < sentences.size(); ++j)
+        for (unsigned int j = 0; j < sentences.size(); ++j)
         {
             std::vector<double> features;
             const std::tr1::unordered_map<int, double>& sentence_map = sentences[j]->sentence_map;
@@ -146,7 +146,7 @@ void GradientBoostingClassifier::predict(std::string abs_filepath_to_features, s
     clock_t start;
     double sumduration = 0.0;
     double sumstrlen = 0.0;
-    size_t num_rows = 0;
+    unsigned int num_rows = 0;
     #endif
 
     while (getline(in, feature_input))
@@ -185,7 +185,7 @@ double GradientBoostingClassifier::predict_tree(const DecisionTree& tree, const 
 double GradientBoostingClassifier::predict_proba(const std::vector<double>& features) const
 {
     double score = 0.0;
-    for (size_t i = 0; i < trees.size(); ++i)
+    for (unsigned int i = 0; i < trees.size(); ++i)
     {
         double tree_prediction = predict_tree(*trees[i], features);
         score += learning_rate * tree_prediction;
@@ -204,10 +204,10 @@ void GradientBoostingClassifier::save(const std::string& filename) const
 
     pVec->save(outFile);
 
-    size_t tree_count = trees.size();
+    unsigned int tree_count = trees.size();
     outFile.write(reinterpret_cast<const char*>(&tree_count), sizeof(tree_count));
 
-    for (size_t i = 0; i < tree_count; ++i)
+    for (unsigned int i = 0; i < tree_count; ++i)
     {
         trees[i]->save(outFile);
     }
@@ -230,10 +230,10 @@ void GradientBoostingClassifier::load(const std::string& filename)
 
     pVec->load(inFile);
 
-    size_t tree_count;
+    unsigned int tree_count;
     inFile.read(reinterpret_cast<char*>(&tree_count), sizeof(tree_count));
     trees.resize(tree_count);
-    for (size_t i = 0; i < tree_count; ++i)
+    for (unsigned int i = 0; i < tree_count; ++i)
     {
         trees[i].reset(new DecisionTree(max_depth));
         trees[i]->load(inFile);
