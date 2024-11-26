@@ -108,7 +108,7 @@ void GradientBoostingClassifier::fit(std::string abs_filepath_to_features, std::
             residuals[j] = y_true - y_pred;
         }
 
-        auto tree = std::make_unique<DecisionTree>(max_depth);
+        auto tree = make_unique1<DecisionTree>(max_depth);
         tree->fit(sentences);
         trees.push_back(std::move(tree));
     }
@@ -233,7 +233,7 @@ void GradientBoostingClassifier::load(const std::string& filename)
     trees.resize(tree_count);
     for (ml_size_t i = 0; i < tree_count; ++i)
     {
-        auto tree = std::make_unique<DecisionTree>(max_depth);
+        auto tree = make_unique1<DecisionTree>(max_depth);
         tree->load(inFile);
         trees[i] = std::move(tree);
     }

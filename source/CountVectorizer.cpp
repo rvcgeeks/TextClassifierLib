@@ -183,7 +183,7 @@ void CountVectorizer::pushSentenceToWordArray(vector<string> new_sentence_vector
 {
     for (const string& word : new_sentence_vector)
     {
-        if (!ContainsWord(word) && !histogram.count(word))
+        if (word_to_idx.count(word) == 0 && histogram.count(word) == 0)
         {
             word_array.push_back(word);
             word_to_idx[word] = word_array.size() - 1;

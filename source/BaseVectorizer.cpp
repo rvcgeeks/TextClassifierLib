@@ -112,28 +112,30 @@ void BaseVectorizer::scanForSparseHistogram(std::string abs_filepath_to_features
         return;
     }
 
+	std::unordered_map<std::string, int> histogram2;
+
     while (getline(in, feature))
     {
         features = buildSentenceVector(feature);
         for (const auto& x : features)
         {
-            if (histogram.count(x) || x.length() == 1)
+            if (histogram2.count(x) || x.length() == 1)
             {
-                histogram[x]++;
+                histogram2[x]++;
             }
             else
             {
-                histogram[x] = 1;
+                histogram2[x] = 1;
             }
         }
     }
     in.close();
 
-    for (const auto& entry : histogram)
+    for (const auto& entry : histogram2)
     {
-        if (entry.second >= minfrequency)
+        if (entry.second < minfrequency)
         {
-            histogram.erase(entry.first);
+            histogram[entry.first] = entry.second;
         }
     }
 

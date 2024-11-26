@@ -175,8 +175,8 @@ public:
     friend class RandomForestClassifier;
     friend class GradientBoostingClassifier;
 
-protected:
     std::vector<std::string> word_array; /**< Array storing words. */
+protected:
     std::unordered_map<std::string, int> word_to_idx; /**< Map of words to their indices. */
     std::vector<std::shared_ptr<Sentence>> sentences; /**< Vector storing sentences. */
     std::unordered_map<std::string, int> histogram;
