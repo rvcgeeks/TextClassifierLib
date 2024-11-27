@@ -135,7 +135,7 @@ void BaseVectorizer::scanForSparseHistogram(std::string abs_filepath_to_features
     {
         if (entry.second < minfrequency)
         {
-            histogram[entry.first] = entry.second;
+			histogram[entry.first] = entry.second;
         }
     }
 
