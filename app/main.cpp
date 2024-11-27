@@ -23,10 +23,10 @@ int main(int argc, char **argv)
 
 	if (argc < 6)
 	{
-		cout << "Usage: " << endl
-			 << "  " << argv[0] << " f (vectorizer id) (classifier id) my_model.bin features.txt labels.txt (model version string) \"hyperparam1=val1,hyperparam2=val2,...\"" << endl
-			 << "  " << argv[0] << " p (vectorizer id) (classifier id) my_model.bin features.txt labels_pred.txt" << endl
-		     << "  " << argv[0] << " 1 (vectorizer id) (classifier id) my_model.bin \"This is string to classify\" " << endl
+		cout << "*** GENERIC MACHINE LEARNING BASED TEXT CLASSIFIER ***\n\nUsage: " << endl
+			 << "Train a model:\n  " << argv[0] << " f (vectorizer id) (classifier id) my_model.bin features.txt labels.txt (model version string) \"hyperparam1=val1,hyperparam2=val2,...\"" << endl
+			 << "Test a model (bulk):\n  " << argv[0] << " p (vectorizer id) (classifier id) my_model.bin features.txt labels_pred.txt" << endl
+			 << "Test a model (single):\n  " << argv[0] << " 1 (vectorizer id) (classifier id) my_model.bin \"This is string to classify\" " << endl
 			 << "\nwhere vectorizer id = " << endl
 			 << "  1 CounterVectorizer\n  2 TfidfVectorizer" << endl
 		     << "\nwhere classifier id = " << endl
