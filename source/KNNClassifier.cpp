@@ -33,6 +33,7 @@ void KNNClassifier::setHyperparameters(std::string hyperparameters)
 
     // "k=3"
     k = 3;
+    pVec->ngrams = 1;
 
     while (std::getline(tokenStream, token, ',')) {
         std::istringstream pairStream(token);
@@ -40,11 +41,14 @@ void KNNClassifier::setHyperparameters(std::string hyperparameters)
         double value;
 
         if (std::getline(pairStream, key, '=') && pairStream >> value) {
-            std::cout << key << " = " << value << std::endl;
-            if (key == "minfrequency") {
+            cout << key << " = " << value << endl;
+            if (key == "ngrams") {
+                pVec->ngrams = value;
+            }
+            else if (key == "minfrequency") {
                 minfrequency = value;
             }
-            if (key == "k") {
+            else if (key == "k") {
                 k = value;
             }
         }

@@ -34,7 +34,8 @@ void NaiveBayesClassifier::setHyperparameters(std::string hyperparameters)
 
     // "smoothing_param_m=1.0,smoothing_param_p=0.5"
     smoothing_param_m = 1.0;
-    smoothing_param_p = 0.5;
+	smoothing_param_p = 0.5;
+    pVec->ngrams = 1;
 
     while (std::getline(tokenStream, token, ',')) {
         std::istringstream pairStream(token);
@@ -42,14 +43,17 @@ void NaiveBayesClassifier::setHyperparameters(std::string hyperparameters)
         double value;
 
         if (std::getline(pairStream, key, '=') && pairStream >> value) {
-            std::cout << key << " = " << value << std::endl;        
-            if (key == "minfrequency") {
+            cout << key << " = " << value << endl;    
+            if (key == "ngrams") {
+                pVec->ngrams = value;
+            }
+            else if (key == "minfrequency") {
                 minfrequency = value;
             }
-            if (key == "smoothing_param_m") {
+            else if (key == "smoothing_param_m") {
                 smoothing_param_m = value;
             }
-            else if (key == "smoothing_param_p") {
+			else if (key == "smoothing_param_p") {
                 smoothing_param_p = value;
             }
         }

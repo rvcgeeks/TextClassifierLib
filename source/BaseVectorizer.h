@@ -176,6 +176,7 @@ public:
     friend class GradientBoostingClassifier;
 
 protected:
+    int ngrams; /**< Specify Ngram configuration. */
     std::vector<std::string> word_array; /**< Array storing words. */
     std::tr1::unordered_map<std::string, int> word_to_idx; /**< Map of words to their indices. */
     std::vector<std::tr1::shared_ptr<Sentence> > sentences; /**< Vector storing sentences. */

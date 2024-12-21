@@ -50,38 +50,34 @@ void SVCClassifier::setHyperparameters(std::string hyperparameters)
     learning_rate = 0.01;
     l1_regularization_param = 0.005;
     l2_regularization_param = 0.0;
+    pVec->ngrams = 1;
 
-    while (std::getline(tokenStream, token, ','))
-    {
+    while (std::getline(tokenStream, token, ',')) {
         std::istringstream pairStream(token);
         std::string key;
         double value;
 
-        if (std::getline(pairStream, key, '=') && pairStream >> value)
-        {
-            std::cout << key << " = " << value << std::endl;
-            if (key == "minfrequency")
-            {
+        if (std::getline(pairStream, key, '=') && pairStream >> value) {
+            cout << key << " = " << value << endl;
+            if (key == "ngrams") {
+                pVec->ngrams = value;
+            }
+            else if (key == "minfrequency") {
                 minfrequency = value;
             }
-            if (key == "bias")
-            {
+            else if (key == "bias") {
                 bias = value;
             }
-            else if (key == "epochs")
-            {
+            else if (key == "epochs") {
                 epochs = value;
             }
-            else if (key == "learning_rate")
-            {
+            else if (key == "learning_rate") {
                 learning_rate = value;
             }
-            else if (key == "l1_regularization_param")
-            {
+            else if (key == "l1_regularization_param") {
                 l1_regularization_param = value;
             }
-            else if (key == "l2_regularization_param")
-            {
+            else if (key == "l2_regularization_param") {
                 l2_regularization_param = value;
             }
         }

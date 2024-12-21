@@ -35,26 +35,25 @@ void RandomForestClassifier::setHyperparameters(std::string hyperparameters)
     // "num_trees=50,max_depth=5"
     num_trees = 50;
     max_depth = 5;
+    pVec->ngrams = 1;
 
-    while (std::getline(tokenStream, token, ','))
-    {
+    while (std::getline(tokenStream, token, ',')) {
         std::istringstream pairStream(token);
         std::string key;
         double value;
 
-        if (std::getline(pairStream, key, '=') && pairStream >> value)
-        {
-            std::cout << key << " = " << value << std::endl;
-            if (key == "minfrequency")
-            {
+        if (std::getline(pairStream, key, '=') && pairStream >> value) {
+            cout << key << " = " << value << endl;
+            if (key == "ngrams") {
+                pVec->ngrams = value;
+            }
+            else if (key == "minfrequency") {
                 minfrequency = value;
             }
-            else if (key == "num_trees")
-            {
+            else if (key == "num_trees") {
                 num_trees = value;
             }
-            else if (key == "max_depth")
-            {
+            else if (key == "max_depth") {
                 max_depth = value;
             }
         }

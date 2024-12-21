@@ -47,6 +47,7 @@ void LogisticRegressionClassifier::setHyperparameters(std::string hyperparameter
     learning_rate = 0.01;
     l1_regularization_param = 0.005;
     l2_regularization_param = 0.0;
+    pVec->ngrams = 1;
 
     while (std::getline(tokenStream, token, ',')) {
         std::istringstream pairStream(token);
@@ -54,11 +55,14 @@ void LogisticRegressionClassifier::setHyperparameters(std::string hyperparameter
         double value;
 
         if (std::getline(pairStream, key, '=') && pairStream >> value) {
-            std::cout << key << " = " << value << std::endl;
-            if (key == "minfrequency") {
+            cout << key << " = " << value << endl;
+            if (key == "ngrams") {
+                pVec->ngrams = value;
+            }
+            else if (key == "minfrequency") {
                 minfrequency = value;
             }
-            if (key == "bias") {
+            else if (key == "bias") {
                 bias = value;
             }
             else if (key == "epochs") {
