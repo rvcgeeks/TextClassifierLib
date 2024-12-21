@@ -298,6 +298,7 @@ void TfidfVectorizer::save(std::ofstream& outFile) const
     outFile.write(reinterpret_cast<const char*>(&binary), sizeof(binary));
     outFile.write(reinterpret_cast<const char*>(&case_sensitive), sizeof(case_sensitive));
     outFile.write(reinterpret_cast<const char*>(&include_stopwords), sizeof(include_stopwords));
+    outFile.write(reinterpret_cast<const char*>(&ngrams), sizeof(ngrams));
 }
 
 void TfidfVectorizer::load(std::ifstream& inFile)
@@ -357,4 +358,5 @@ void TfidfVectorizer::load(std::ifstream& inFile)
     inFile.read(reinterpret_cast<char*>(&binary), sizeof(binary));
     inFile.read(reinterpret_cast<char*>(&case_sensitive), sizeof(case_sensitive));
     inFile.read(reinterpret_cast<char*>(&include_stopwords), sizeof(include_stopwords));
+    inFile.read(reinterpret_cast<char*>(&ngrams), sizeof(ngrams));
 }

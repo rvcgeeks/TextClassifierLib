@@ -48,6 +48,7 @@ void GradientBoostingClassifier::setHyperparameters(std::string hyperparameters)
     n_trees = 50;
     max_depth = 5;
     learning_rate = 0.01;
+    pVec->ngrams = 1;
 
     while (std::getline(tokenStream, token, ',')) {
         std::istringstream pairStream(token);
@@ -56,10 +57,13 @@ void GradientBoostingClassifier::setHyperparameters(std::string hyperparameters)
 
         if (std::getline(pairStream, key, '=') && pairStream >> value) {
             cout << key << " = " << value << endl;
-            if (key == "minfrequency") {
+            if (key == "ngrams") {
+                pVec->ngrams = value;
+            }
+            else if (key == "minfrequency") {
                 minfrequency = value;
             }
-            if (key == "n_trees") {
+            else if (key == "n_trees") {
                 n_trees = value;
             }
             else if (key == "max_depth") {

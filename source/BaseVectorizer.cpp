@@ -35,6 +35,31 @@ std::string preprocess_text(const std::string& text) {
 }
 
 /**
+ * @brief Generate n-grams from a vector of words.
+ *
+ * @param tokens The vector of words (tokens) from which to generate n-grams.
+ * @param n The size of n-grams to generate.
+ * @return A vector of n-grams as strings.
+ */
+vector<string> generateNGrams(const vector<string>& tokens, int n) {
+    vector<string> ngrams;
+
+    if (n <= 0 || tokens.size() < n) {
+        return ngrams; // Return empty if n is invalid or insufficient tokens
+    }
+
+    for (size_t i = 0; i <= tokens.size() - n; ++i) {
+        string ngram = tokens[i];
+        for (int j = 1; j < n; ++j) {
+            ngram += " " + tokens[i + j];
+        }
+        ngrams.push_back(ngram);
+    }
+
+    return ngrams;
+}
+
+/**
  * @brief Split a sentence into a vector of words.
  *
  * @param sentence_ The sentence to split.
@@ -95,6 +120,11 @@ vector<string> BaseVectorizer::buildSentenceVector(string sentence_, bool prepro
             fixed_ret.push_back(s);
         }
     }
+
+    if (ngrams > 1) {
+        return generateNGrams(fixed_ret, ngrams);
+    }
+
     return fixed_ret;
 }
 
